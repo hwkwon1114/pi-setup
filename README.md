@@ -32,6 +32,7 @@ Target defaults to `$PI_AGENT_HOME`, else `~/.pi/agent`; override with `--dest=P
 | `skills/` | exploratory-data-analysis, paper-summary, pdf-read, research-workflow, scientific-visualization, skill-maintenance, statistical-analysis, zotero-sync |
 | `extensions/literature-reviewer/` | `literature_review` delegation tool |
 | `roles/literature-reviewer/` | Role skills (`research-ideas`) used by that extension |
+| `optional/mineru/` | Installer + pinned lockfile for the optional MinerU equation backend |
 
 ## Deliberately not packaged
 
@@ -54,13 +55,17 @@ Credentials and machine state stay on each machine:
 pages. It is optional and never bundled: Poppler does all default text extraction
 and rendering, and the packaged scripts never invoke MinerU.
 
-If you have an installation, point the skill at it:
+To install it on a new machine (~2.2 GB, rebuilt from a pinned lockfile):
 
 ```bash
-export MINERU_HOME=/path/to/mineru-root   # expects mineru-venv/, mineru-cache/, mineru.json
+export MINERU_HOME="$HOME/pi-tools/mineru"
+./optional/mineru/install.sh --dry-run
+./optional/mineru/install.sh
 ```
 
-Default fallback is `~/tmp/pdf-equation-benchmark` (the original pilot machine,
-MinerU 3.4.5). With no installation the skill reports the backend unavailable and
-stays on Poppler. Its accuracy evidence is a two-page pilot only, so treat any
-output as an unverified candidate transcription.
+See `optional/mineru/README.md` for prerequisites, verification and platform caveats.
+If you already have an install elsewhere, just export `MINERU_HOME` at its root
+(expects `mineru-venv/`, `mineru-cache/`, `mineru.json`). Default fallback is
+`~/tmp/pdf-equation-benchmark`. With no installation the skill reports the backend
+unavailable and stays on Poppler. Its accuracy evidence is a two-page pilot only, so
+treat any output as an unverified candidate transcription.
