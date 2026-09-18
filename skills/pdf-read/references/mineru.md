@@ -6,16 +6,28 @@ Poppler remains the default searchable-text backend. Use MinerU only when candid
 
 The local pilot used MinerU 3.4.5 pipeline on physical pages 4 and 6 of A47 (arXiv:2310.10776v1). It retained displayed equation structures and numbers better than the other successful configurations, but misread an inline subscript as a superscript and an ordinary plus as a dotted plus. This is not a broad benchmark. Matrices, scanned papers and tables remain untested.
 
-## Existing installation (machine-specific)
+## Locating an installation (machine-specific)
 
-The authorized benchmark installation currently lives at:
+MinerU is never bundled with this skill. Resolve it per machine through `MINERU_HOME`, the directory holding the venv, model cache and config:
 
-- Executable: `/Users/hyunwoo/tmp/pdf-equation-benchmark/mineru-venv/bin/mineru`
-- Model cache: `/Users/hyunwoo/tmp/pdf-equation-benchmark/mineru-cache`
-- Config location: `/Users/hyunwoo/tmp/pdf-equation-benchmark/mineru.json`
-- Benchmark: `/Users/hyunwoo/tmp/pdf-equation-benchmark/mineru-results/assessment.md`
+```bash
+export MINERU_HOME="${MINERU_HOME:-$HOME/tmp/pdf-equation-benchmark}"
+```
 
-These are temporary-workspace paths, not portable or guaranteed permanent. Check the executable exists before use. Do not automatically reinstall or migrate it. Ask before additional dependency installations or new model downloads. Do not enable remote HTTP backends, cloud parsing, or LLM-assisted services without separate authorization.
+Within that root:
+
+- Executable: `$MINERU_HOME/mineru-venv/bin/mineru`
+- Model cache: `$MINERU_HOME/mineru-cache`
+- Config: `$MINERU_HOME/mineru.json`
+- Local pilot notes, where they exist: `$MINERU_HOME/mineru-results/assessment.md`
+
+The default fallback is a temporary-workspace path from the original pilot machine; it is not portable or guaranteed permanent. Confirm availability before any use, and stop rather than substituting another backend:
+
+```bash
+[ -x "$MINERU_HOME/mineru-venv/bin/mineru" ] || echo "MinerU unavailable; stay on Poppler"
+```
+
+If it is absent, report the optional backend as unavailable and continue with Poppler. Do not automatically install, reinstall or migrate it. Ask before additional dependency installations or new model downloads. Do not enable remote HTTP backends, cloud parsing, or LLM-assisted services without separate authorization.
 
 ## Invocation
 
@@ -27,11 +39,11 @@ Example for physical PDF page 6 (MinerU CLI uses ZERO-based indices):
 # Set this to a new absolute destination outside the source PDF directory.
 OUT=/absolute/new-mineru-page-0006
 mkdir "$OUT" || exit 1
-HF_HOME=/Users/hyunwoo/tmp/pdf-equation-benchmark/mineru-cache \
-MINERU_TOOLS_CONFIG_JSON=/Users/hyunwoo/tmp/pdf-equation-benchmark/mineru.json \
+HF_HOME="$MINERU_HOME/mineru-cache" \
+MINERU_TOOLS_CONFIG_JSON="$MINERU_HOME/mineru.json" \
 MINERU_MODEL_SOURCE=huggingface \
 MINERU_DEVICE_MODE=cpu \
-/Users/hyunwoo/tmp/pdf-equation-benchmark/mineru-venv/bin/mineru \
+"$MINERU_HOME/mineru-venv/bin/mineru" \
   -p /absolute/original.pdf -o "$OUT" \
   -b pipeline -m txt -s 5 -e 5 -f true -t false \
   > "$OUT/run.log" 2>&1

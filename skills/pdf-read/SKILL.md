@@ -56,4 +56,4 @@ Keep extracted text separate from corrected/transcribed text. Record every conse
 
 ## Dependencies and scope
 
-Default backend: Poppler text extraction and page rendering. Optional equation backend: local MinerU pipeline, invoked separately as documented in `references/mineru.md`; the bundled Poppler helper does not invoke it automatically. OCR and specialized parsing are optional, not automatically installed. No MCP, account, API key, or cloud extraction service is required for the helper. This workflow was written independently; it does not copy the proprietary PDF skills discussed previously.
+Default backend: Poppler text extraction and page rendering. Optional equation backend: local MinerU pipeline, located per machine via `MINERU_HOME` and invoked separately as documented in `references/mineru.md`; the bundled Poppler helper does not invoke it automatically. OCR and specialized parsing are optional, not automatically installed. No MCP, account, API key, or cloud extraction service is required for the helper. This workflow was written independently; it does not copy the proprietary PDF skills discussed previously.

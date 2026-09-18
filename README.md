@@ -48,8 +48,19 @@ Credentials and machine state stay on each machine:
 4. Prune `enabledModels` for providers you do not have on the new machine.
 5. Optional: reinstall `rg`/`fd` into `~/.pi/agent/bin` if you rely on the bundled copies.
 
-## Known machine-specific references
+## Optional local MinerU backend
 
-`skills/pdf-read/references/mineru.md` documents a local MinerU venv under
-`~/tmp/pdf-equation-benchmark/`. That path will not exist elsewhere; the skill's
-main extraction/rendering scripts work without it.
+`pdf-read` can use a local MinerU pipeline for candidate LaTeX on equation-heavy
+pages. It is optional and never bundled: Poppler does all default text extraction
+and rendering, and the packaged scripts never invoke MinerU.
+
+If you have an installation, point the skill at it:
+
+```bash
+export MINERU_HOME=/path/to/mineru-root   # expects mineru-venv/, mineru-cache/, mineru.json
+```
+
+Default fallback is `~/tmp/pdf-equation-benchmark` (the original pilot machine,
+MinerU 3.4.5). With no installation the skill reports the backend unavailable and
+stays on Poppler. Its accuracy evidence is a two-page pilot only, so treat any
+output as an unverified candidate transcription.
