@@ -33,6 +33,7 @@ Target defaults to `$PI_AGENT_HOME`, else `~/.pi/agent`; override with `--dest=P
 | `extensions/literature-reviewer/` | `literature_review` delegation tool |
 | `roles/literature-reviewer/` | Role skills (`research-ideas`) used by that extension |
 | `optional/mineru/` | Installer + pinned lockfile for the optional MinerU equation backend |
+| `bin/common.sh` | Cross-platform helpers: agent home, OS, python, venv layout, symlink test |
 
 ## Deliberately not packaged
 

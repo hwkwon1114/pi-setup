@@ -1,0 +1,9 @@
+# Shell scripts must stay LF even on Windows checkouts: Git Bash fails with
+# "bad interpreter: /usr/bin/env bash^M" if core.autocrlf rewrites them.
+*.sh text eol=lf
+*.mjs text eol=lf
+*.ts text eol=lf
+*.py text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.txt text eol=lf

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Install this pi setup into a pi agent home (default: ~/.pi/agent).
+# Runs on macOS, Linux, WSL and Windows (Git Bash / MSYS2 / Cygwin, which is the
+# shell pi itself uses on Windows).
 #
 #   ./bin/install.sh            # copy files (backs up anything replaced)
 #   ./bin/install.sh --link     # symlink skills/extensions/roles instead of copying
@@ -10,7 +12,9 @@
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DST="${PI_AGENT_HOME:-$HOME/.pi/agent}"
+. "$REPO/bin/common.sh"
+DST="$(pi_agent_home)"
+OS="$(pi_os)"
 MODE=copy
 DRY=0
 
@@ -37,7 +41,16 @@ backup() { # $1 = path in DST
   run rm -rf "$1"
 }
 
-say "pi setup: $REPO -> $DST  (mode=$MODE, dry-run=$DRY)"
+if [ "$MODE" = link ] && ! pi_symlinks_work; then
+  cat >&2 <<EOF
+error: this shell cannot create symlinks (common on Windows without Developer Mode).
+       Re-run without --link to copy, or enable Developer Mode / run as Administrator
+       and set MSYS=winsymlinks:nativestrict.
+EOF
+  exit 1
+fi
+
+say "pi setup: $REPO -> $DST  (os=$OS, mode=$MODE, dry-run=$DRY)"
 run mkdir -p "$DST"
 
 # --- shared instructions and config files -------------------------------------
@@ -73,6 +86,7 @@ Done. Remaining manual steps on a fresh machine:
   1. Start pi and sign in to each provider (auth.json is intentionally not packaged).
   2. pi installs the npm packages listed in settings.json on first launch; verify with /packages.
   3. MCP servers in mcp.json (consensus, researchfasttrack) need their own OAuth on first use.
-  4. Optional helper binaries (~/.pi/agent/bin/rg, fd) are platform-specific; install locally if wanted.
+  4. Optional helper binaries (<agent home>/bin/rg, fd) are platform-specific; install locally if wanted.
   5. enabledModels assumes the same provider set; prune entries for providers you do not have.
+  6. Windows: pi uses Git Bash; install Git for Windows if pi cannot find a shell.
 EOF

@@ -8,9 +8,16 @@
 #
 # Downloads roughly 2.2 GB (1.2 GB venv + 1.0 GB models) from PyPI and HuggingFace.
 # Nothing is installed system-wide; everything lands under $MINERU_HOME.
+#
+# Platforms: macOS, Linux, WSL, Windows (Git Bash / MSYS2).
+#   Linux + NVIDIA:  MINERU_TORCH_INDEX=https://download.pytorch.org/whl/cu124
+#   Any platform:    MINERU_RELAX_TORCH=1 lets the resolver pick torch/torchvision
+#                    if the pinned macOS-arm64 versions have no wheel for you.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/../../bin/common.sh"
+OS="$(pi_os)"
 MINERU_HOME="${MINERU_HOME:-$HOME/tmp/pdf-equation-benchmark}"
 PYTHON_VERSION=3.12
 MODEL_REPO=opendatalab/PDF-Extract-Kit-1.0
@@ -30,27 +37,50 @@ done
 VENV="$MINERU_HOME/mineru-venv"
 CACHE="$MINERU_HOME/mineru-cache"
 CONFIG="$MINERU_HOME/mineru.json"
+MINERU_BIN="$(pi_venv_exe "$VENV" mineru)"
+HF_BIN="$(pi_venv_exe "$VENV" hf)"
+PY_BIN="$(pi_venv_exe "$VENV" python)"
 
 run() { if [ "$DRY" = 1 ]; then printf '  would: %s\n' "$*"; else "$@"; fi; }
 
-echo "MinerU 3.4.5 -> $MINERU_HOME  (dry-run=$DRY, venv-only=$VENV_ONLY)"
+echo "MinerU 3.4.5 -> $MINERU_HOME  (os=$OS, dry-run=$DRY, venv-only=$VENV_ONLY)"
 
-if ! command -v uv >/dev/null 2>&1; then
+require_uv() {
+  command -v uv >/dev/null 2>&1 && return 0
   cat >&2 <<'EOF'
-error: uv not found. Install it first, e.g.
-  curl -LsSf https://astral.sh/uv/install.sh | sh
+error: uv not found. Install it first:
+  macOS/Linux/WSL/Git Bash:  curl -LsSf https://astral.sh/uv/install.sh | sh
+  Windows PowerShell:        irm https://astral.sh/uv/install.ps1 | iex
 uv is used because the lockfile is a flat pinned set and uv fetches its own Python.
 EOF
   exit 1
-fi
+}
 
 # --- 1. virtualenv with pinned dependencies -----------------------------------
-if [ -x "$VENV/bin/mineru" ]; then
-  echo "= venv already present ($("$VENV/bin/mineru" --version 2>&1 | tail -1))"
+REQ="$HERE/requirements.lock.txt"
+PIP_ARGS=""
+[ -n "${MINERU_TORCH_INDEX:-}" ] && PIP_ARGS="--extra-index-url $MINERU_TORCH_INDEX"
+
+if [ "${MINERU_RELAX_TORCH:-0}" = 1 ]; then
+  REQ="$MINERU_HOME/requirements.relaxed.txt"
+  if [ "$DRY" = 1 ]; then
+    echo "  would: write $REQ (torch/torchvision unpinned)"
+  else
+    mkdir -p "$MINERU_HOME"
+    sed -E 's/^(torch|torchvision)==.*/\1/' "$HERE/requirements.lock.txt" > "$REQ"
+  fi
+fi
+
+if [ -f "$MINERU_BIN" ] || [ -x "$MINERU_BIN" ]; then
+  echo "= venv already present ($("$MINERU_BIN" --version 2>&1 | tail -1))"
 else
+  require_uv
   run mkdir -p "$MINERU_HOME"
   run uv venv --python "$PYTHON_VERSION" "$VENV"
-  run uv pip install --python "$VENV/bin/python" -r "$HERE/requirements.lock.txt"
+  # shellcheck disable=SC2086
+  run uv pip install --python "$PY_BIN" $PIP_ARGS -r "$REQ"
+  MINERU_BIN="$(pi_venv_exe "$VENV" mineru)"
+  HF_BIN="$(pi_venv_exe "$VENV" hf)"
 fi
 
 if [ "$VENV_ONLY" = 1 ]; then
@@ -61,9 +91,9 @@ fi
 # --- 2. model snapshot ---------------------------------------------------------
 run mkdir -p "$CACHE"
 if [ "$DRY" = 1 ]; then
-  echo "  would: HF_HOME=$CACHE hf download $MODEL_REPO --revision $MODEL_REVISION"
+  echo "  would: HF_HOME=$CACHE $HF_BIN download $MODEL_REPO --revision $MODEL_REVISION"
 else
-  HF_HOME="$CACHE" "$VENV/bin/hf" download "$MODEL_REPO" --revision "$MODEL_REVISION" >/dev/null
+  HF_HOME="$CACHE" "$HF_BIN" download "$MODEL_REPO" --revision "$MODEL_REVISION" >/dev/null
 fi
 
 SNAPSHOT="$CACHE/hub/models--${MODEL_REPO/\//--}/snapshots/$MODEL_REVISION"
@@ -82,7 +112,7 @@ fi
 # --- 4. verification ------------------------------------------------------------
 if [ "$DRY" = 0 ]; then
   echo
-  echo "Installed: $("$VENV/bin/mineru" --version 2>&1 | tail -1)"
+  echo "Installed: $("$MINERU_BIN" --version 2>&1 | tail -1)"
   echo "Models:    $(ls "$SNAPSHOT/models" | tr '\n' ' ')"
   echo "Config:    $CONFIG"
 fi
@@ -97,6 +127,6 @@ Smoke test on one page of any PDF (zero-based page indices):
   mkdir -p "\$OUT"
   HF_HOME="$CACHE" MINERU_TOOLS_CONFIG_JSON="$CONFIG" \\
   MINERU_MODEL_SOURCE=huggingface MINERU_DEVICE_MODE=cpu \\
-  "$VENV/bin/mineru" -p /absolute/paper.pdf -o "\$OUT" \\
+  "$MINERU_BIN" -p /absolute/paper.pdf -o "\$OUT" \\
     -b pipeline -m txt -s 0 -e 0 -f true -t false
 EOF

@@ -16,7 +16,7 @@ export MINERU_HOME="${MINERU_HOME:-$HOME/tmp/pdf-equation-benchmark}"
 
 Within that root:
 
-- Executable: `$MINERU_HOME/mineru-venv/bin/mineru`
+- Executable: `$MINERU_HOME/mineru-venv/bin/mineru` (Windows: `mineru-venv/Scripts/mineru.exe`)
 - Model cache: `$MINERU_HOME/mineru-cache`
 - Config: `$MINERU_HOME/mineru.json`
 - Local pilot notes, where they exist: `$MINERU_HOME/mineru-results/assessment.md`
@@ -24,7 +24,9 @@ Within that root:
 The default fallback is a temporary-workspace path from the original pilot machine; it is not portable or guaranteed permanent. Confirm availability before any use, and stop rather than substituting another backend:
 
 ```bash
-[ -x "$MINERU_HOME/mineru-venv/bin/mineru" ] || echo "MinerU unavailable; stay on Poppler"
+MINERU_BIN="$MINERU_HOME/mineru-venv/bin/mineru"
+[ -d "$MINERU_HOME/mineru-venv/Scripts" ] && MINERU_BIN="$MINERU_HOME/mineru-venv/Scripts/mineru.exe"
+[ -x "$MINERU_BIN" ] || [ -f "$MINERU_BIN" ] || echo "MinerU unavailable; stay on Poppler"
 ```
 
 If it is absent, report the optional backend as unavailable and continue with Poppler. Do not automatically install, reinstall or migrate it. Ask before additional dependency installations or new model downloads. Do not enable remote HTTP backends, cloud parsing, or LLM-assisted services without separate authorization.
@@ -43,7 +45,7 @@ HF_HOME="$MINERU_HOME/mineru-cache" \
 MINERU_TOOLS_CONFIG_JSON="$MINERU_HOME/mineru.json" \
 MINERU_MODEL_SOURCE=huggingface \
 MINERU_DEVICE_MODE=cpu \
-"$MINERU_HOME/mineru-venv/bin/mineru" \
+"$MINERU_BIN" \
   -p /absolute/original.pdf -o "$OUT" \
   -b pipeline -m txt -s 5 -e 5 -f true -t false \
   > "$OUT/run.log" 2>&1

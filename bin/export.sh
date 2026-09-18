@@ -8,7 +8,8 @@
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SRC="${PI_AGENT_HOME:-$HOME/.pi/agent}"
+. "$REPO/bin/common.sh"
+SRC="$(pi_agent_home)"
 DRY=0
 [ "${1:-}" = "--dry-run" ] && DRY=1
 
@@ -32,8 +33,9 @@ for f in models.json mcp.json; do
 done
 
 # settings.json minus machine-local bookkeeping
-if [ "$DRY" = 0 ] && [ -f "$SRC/settings.json" ]; then
-  python3 - "$SRC/settings.json" "$REPO/config/settings.json" <<'PY'
+PY_CMD="$(pi_python || true)"
+if [ "$DRY" = 0 ] && [ -f "$SRC/settings.json" ] && [ -n "$PY_CMD" ]; then
+  $PY_CMD - "$SRC/settings.json" "$REPO/config/settings.json" <<'PY'
 import json, sys
 src, dst = sys.argv[1], sys.argv[2]
 s = json.load(open(src))
@@ -41,6 +43,9 @@ for k in ("lastChangelogVersion",):
     s.pop(k, None)
 open(dst, "w").write(json.dumps(s, indent=2) + "\n")
 PY
+elif [ "$DRY" = 0 ] && [ -f "$SRC/settings.json" ]; then
+  echo "! no python3 found: copying settings.json verbatim; remove lastChangelogVersion by hand" >&2
+  cp "$SRC/settings.json" "$REPO/config/settings.json"
 fi
 echo "+ config/"
 
