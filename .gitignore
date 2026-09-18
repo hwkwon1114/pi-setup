@@ -1,0 +1,11 @@
+.DS_Store
+*.log
+
+# never commit credentials or machine state, even if copied in by mistake
+auth.json
+models-store.json
+mcp-cache.json
+trust.json
+sessions/
+literature-review-runs/
+node_modules/

@@ -1,0 +1,22 @@
+{
+  "settings": {
+    "hostConfigDiscovery": "off",
+    "autoAuth": false,
+    "sampling": false,
+    "scriptMode": false
+  },
+  "mcpServers": {
+    "consensus": {
+      "url": "https://mcp.consensus.app/mcp",
+      "auth": "oauth",
+      "oauth": { "scope": "search" },
+      "lifecycle": "lazy",
+      "requestTimeoutMs": 60000
+    },
+    "researchfasttrack": {
+      "url": "https://literature.researchfasttrack.com/mcp",
+      "lifecycle": "lazy",
+      "requestTimeoutMs": 60000
+    }
+  }
+}

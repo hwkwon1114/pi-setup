@@ -1,0 +1,30 @@
+{
+  "theme": "light",
+  "defaultProvider": "anthropic",
+  "defaultModel": "claude-opus-5",
+  "defaultThinkingLevel": "medium",
+  "warnings": {
+    "anthropicExtraUsage": false
+  },
+  "packages": [
+    "npm:@rahularya01/pi-cursor@1.4.33",
+    "npm:pi-antigravity@0.7.2",
+    {
+      "source": "npm:pi-mcp-adapter@2.32.1",
+      "extensions": [],
+      "skills": [],
+      "prompts": [],
+      "themes": []
+    },
+    "npm:@benvargas/pi-claude-code-use"
+  ],
+  "enabledModels": [
+    "cursor/auto",
+    "anthropic/claude-opus-5",
+    "openai-codex/gpt-6-astra",
+    "openai-codex/gpt-5.6-sol",
+    "openai-codex/gpt-5.6-luna",
+    "antigravity/gemini-3.8-flash",
+    "openai-codex/gpt-reserve"
+  ]
+}
