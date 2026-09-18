@@ -22,8 +22,16 @@ for d in skills extensions roles; do
     echo "= $d/ (symlinked to repo)"
     continue
   fi
-  run rm -rf "$REPO/$d"
-  run cp -R "$SRC/$d" "$REPO/$d"
+  # stage then swap: an interrupted copy must not leave the repo without $d
+  if [ "$DRY" = 1 ]; then
+    echo "  would: stage $SRC/$d then replace $REPO/$d"
+  else
+    stage="$REPO/.export-stage-$d.$$"
+    rm -rf "$stage"
+    cp -R "$SRC/$d" "$stage"
+    rm -rf "$REPO/$d"
+    mv "$stage" "$REPO/$d"
+  fi
   echo "+ $d/"
 done
 
@@ -50,4 +58,5 @@ fi
 echo "+ config/"
 
 run find "$REPO" -name '.DS_Store' -delete
+run rm -rf "$REPO"/.export-stage-*
 echo "Exported $SRC -> $REPO. Review with 'git diff' before committing."

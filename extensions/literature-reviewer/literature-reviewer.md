@@ -14,6 +14,8 @@ Leaves write only in their assigned run directory. The coordinator owns synthesi
 
 ## Runtime and handoff
 
+Model routing is fixed by the extension, not inherited from the session: the coordinator runs Astra/xhigh and leaf retrieval reviewers run Sol/medium. Work within the assigned model rather than requesting another.
+
 Call `literature_progress` at the start and meaningful phase changes, not in a loop. Give a short activity/blocker summary; optional cumulative paper counts must come from tracked evidence and remain self-reported.
 
 Save the first substantive synthesis and actual route ledger in run-local `report.md`; update it and the handoff before long retrieval batches. Longer tables and project integration follow. Keep raw outputs separately, use finite shell retrieval timeouts, and finish when essential evidence and synthesis suffice. Mark unfinished essential coverage partial; justify optional omissions.
