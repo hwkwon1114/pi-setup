@@ -42,9 +42,25 @@ Credentials and machine state stay on each machine:
 `literature-review-runs/`, `npm/node_modules/`, `bin/` (platform binaries),
 `backups/`, `extension-backups/`, `skill-maintenance/` working dirs.
 
+## Self-check
+
+```bash
+./tests/run-tests.sh     # offline: no network, no credentials, temp dirs only
+```
+
+Covers script syntax, CRLF, config JSON, skill frontmatter and cross-references, the
+extension's own unit tests, install/export round trip (including paths with spaces and
+idempotent reruns), and MinerU dry-runs for both `bin/` and Windows `Scripts/` layouts.
+Checks needing an absent tool (`python3`, `uv`, `node`) are skipped or invert to an
+error-message assertion, so the suite is green on a bare machine too.
+
 ## Post-install checklist
 
-1. Sign in to providers in pi (`/login`); no keys are in this repo.
+1. **Sign in to providers first.** Model catalogs are fetched per provider after
+   authentication and are not packaged, so until you log in pi prints
+   `Warning: No models match pattern "..."` for every entry in `enabledModels`.
+   This is expected, not a broken config; the warnings clear once signed in.
+   `pi update --models` alone does **not** populate the catalogs.
 2. First launch installs the npm packages from `settings.json`; verify with `/packages`.
 3. MCP servers need their own OAuth on first use.
 4. Prune `enabledModels` for providers you do not have on the new machine.
