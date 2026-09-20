@@ -15,8 +15,7 @@
       "skills": [],
       "prompts": [],
       "themes": []
-    },
-    "npm:@benvargas/pi-claude-code-use"
+    }
   ],
   "enabledModels": [
     "cursor/auto",
