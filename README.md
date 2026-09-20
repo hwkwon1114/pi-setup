@@ -15,11 +15,60 @@ cd ~/Documents/pi-setup
 
 Target defaults to `$PI_AGENT_HOME`, else `~/.pi/agent`; override with `--dest=PATH`.
 
-## Keep the package current
+## Bidirectional updates across computers (recommended)
+
+Keep a permanent checkout on each computer. On an already configured machine:
 
 ```bash
-./bin/export.sh             # ~/.pi/agent -> this repo, then git diff / commit
+git clone https://github.com/hwkwon1114/pi-setup.git ~/pi-setup
+cd ~/pi-setup
+./bin/install.sh --link --resources-only --dry-run
+./bin/install.sh --link --resources-only
 ```
+
+This links skills, extensions and roles to the checkout, backing up replaced
+resources while leaving all local configuration and credentials untouched.
+Compare existing resources before linking: reconcile any local-only changes into
+the checkout first. Do not move or delete the checkout after linking.
+Fresh machines should first review the configuration templates and use the full
+installer above; `--resources-only` does not configure providers or MCP dependencies.
+Do not also register these same resources with `pi install`: that can load them twice.
+
+Before editing on either computer:
+
+```bash
+cd ~/pi-setup
+git status                 # commit/reconcile existing work before pulling
+git pull --rebase
+# Edit linked resources, then run checks in an appropriate environment.
+git diff
+git add <specific-files>   # replace with reviewed paths; never add secrets
+git commit -m "Describe the update"
+git push
+```
+
+On the other computer, run `git pull --rebase`, then `/reload` in Pi. Restart Pi
+if the extension changes require it. Resolve Git conflicts explicitly; do not
+force-push or overwrite the other computer's changes. Review config changes
+separately: linked updates intentionally do not overwrite machine settings.
+
+If symlinks are unavailable, use `--resources-only` without `--link` to copy.
+Before pulling, reconcile local resource edits into the checkout and commit them;
+after pulling, rerun the copy installer. Never reinstall over unexported edits.
+
+### Exporting an existing setup
+
+```bash
+./bin/export.sh --dry-run
+./bin/export.sh             # ~/.pi/agent -> this repo, then review git diff
+```
+
+Export replaces resource directories and copies configuration; it is not a merge
+or a secret scrubber. Avoid it for routine linked updates. Review configuration
+for credentials, local paths and computer-specific preferences before committing.
+Keep authentication, session data and research files out of this repository.
+Cluster helpers (such as Quest's `srun-here`), scheduler defaults and cluster-specific
+instructions belong on that machine, not in shared configuration.
 
 ## Contents
 

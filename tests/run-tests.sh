@@ -74,6 +74,14 @@ check "rerun is idempotent" "./bin/install.sh --dest='$T'"
 check "unknown flag rejected" "! ./bin/install.sh --nope"
 S="$T/dir with spaces/agent"
 check "path with spaces" "./bin/install.sh --dest='$S' && [ -d '$S/skills' ]"
+L="$T/linked-agent"
+mkdir -p "$L"
+printf 'local settings\n' > "$L/settings.json"
+printf 'local instructions\n' > "$L/AGENTS.md"
+if pi_symlinks_work; then
+  check "resource-only links preserve config" "./bin/install.sh --link --resources-only --dest='$L' && [ -L '$L/skills' ] && [ -L '$L/extensions' ] && [ -L '$L/roles' ] && grep -qx 'local settings' '$L/settings.json' && grep -qx 'local instructions' '$L/AGENTS.md' && [ ! -e '$L/models.json' ]"
+  check "linked rerun needs no backup" "./bin/install.sh --link --resources-only --dest='$L' && [ ! -e '$L/backups' ]"
+fi
 check "export dry-run" "PI_CODING_AGENT_DIR='$T' ./bin/export.sh --dry-run"
 check "no export stage leftovers" "[ -z \"\$(ls -d '$REPO'/.export-stage-* 2>/dev/null)\" ]"
 

@@ -17,10 +17,12 @@ DST="$(pi_agent_home)"
 OS="$(pi_os)"
 MODE=copy
 DRY=0
+RESOURCES_ONLY=0
 
 for arg in "$@"; do
   case "$arg" in
     --link) MODE=link ;;
+    --resources-only) RESOURCES_ONLY=1 ;;
     --dry-run) DRY=1 ;;
     --dest=*) DST="${arg#--dest=}" ;;
     -h|--help) sed -n '2,10p' "$0"; exit 0 ;;
@@ -55,6 +57,7 @@ run mkdir -p "$DST"
 
 # --- shared instructions and config files -------------------------------------
 for f in AGENTS.md settings.json models.json mcp.json; do
+  [ "$RESOURCES_ONLY" = 1 ] && continue
   src="$REPO/config/$f"
   [ -f "$src" ] || continue
   if [ -e "$DST/$f" ] && cmp -s "$src" "$DST/$f"; then
@@ -69,6 +72,10 @@ done
 # --- directory payloads --------------------------------------------------------
 for d in skills extensions roles; do
   [ -d "$REPO/$d" ] || continue
+  if [ "$MODE" = link ] && [ -L "$DST/$d" ] && [ "$(readlink "$DST/$d")" = "$REPO/$d" ]; then
+    say "= $d/ (already linked)"
+    continue
+  fi
   backup "$DST/$d"
   if [ "$MODE" = link ]; then
     run ln -s "$REPO/$d" "$DST/$d"
