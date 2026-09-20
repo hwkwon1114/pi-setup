@@ -7,10 +7,10 @@
     "anthropicExtraUsage": false
   },
   "packages": [
-    "npm:@rahularya01/pi-cursor@1.4.33",
-    "npm:pi-antigravity@0.7.2",
+    "npm:@rahularya01/pi-cursor@latest",
+    "npm:pi-antigravity@latest",
     {
-      "source": "npm:pi-mcp-adapter@2.32.1",
+      "source": "npm:pi-mcp-adapter@latest",
       "extensions": [],
       "skills": [],
       "prompts": [],
@@ -19,7 +19,6 @@
   ],
   "enabledModels": [
     "cursor/auto",
-    "anthropic/claude-opus-5",
     "openai-codex/gpt-6-astra",
     "openai-codex/gpt-5.6-sol",
     "openai-codex/gpt-5.6-luna",
