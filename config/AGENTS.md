@@ -2,6 +2,10 @@
 
 Keep instructions and deliverables minimal. Shared defaults belong here, project facts in project instructions, and task methods in skills. Prefer one authoritative source over parallel copies; preserve evidence and researcher-owned notes. Report what was actually checked, remaining limits, and decisions left to the researcher.
 
+## Opening deliverables
+
+- In Pi within VS Code's remote terminal, provide copyable `code /absolute/path` commands for opening figures and other files, rather than Markdown file hyperlinks. The user confirmed the commands work while blue links fail even with absolute paths. Quote paths containing spaces; verify files exist before offering them. This preference does not apply to ordinary web links.
+
 ## Neural-network training
 
 - Before comparative training, record and check initialization/pretrained provenance, input/target scaling, optimizer/LR schedule, regularization (including any justified absence), and finite losses/gradients. Apply reasonable training practice to every comparator; equal update caps alone do not establish fairness.

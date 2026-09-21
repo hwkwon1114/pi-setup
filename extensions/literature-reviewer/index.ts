@@ -51,16 +51,17 @@ export default async function (pi: ExtensionAPI) {
     description:'Show the latest review activity without starting or interrupting a review',
     handler:async(_args,ctx)=>{ctx.ui.notify(latestStatus,'info');}
   });
-  const maxConcurrent=depth===0?1:2;
-  const maxDispatches=4;
+  const maxConcurrent=depth===0?1:4;
+  // Main-session follow-ups are separate scoped reviews; only child fan-out has a lifetime cap.
+  const maxDispatches=depth===0?Infinity:4;
   pi.registerTool({
     name:'literature_review',label:'Literature reviewer',
-    description:'Delegate a bounded literature task to an isolated literature-reviewer Pi process. Assigned skills: research-ideas, pdf-read; MCP: Consensus and ResearchFastTrack. The coordinating reviewer uses Astra xhigh; leaf retrieval reviewers use Sol medium. Reviewer may spawn up to four child reviewers, two concurrently; leaf children cannot delegate. No Zotero or computational experiments. Authored reports and partial artifacts preserved locally; no coordinator wall-clock deadline, independent 10-minute leaf deadlines with finalization reserves, live activity checkpoints, and bounded output. Pass a narrowly ranked task with essential versus optional deliverables, relevant context and absolute source paths; parent conversation is not copied.',
+    description:'Delegate a bounded literature task to an isolated literature-reviewer Pi process. Assigned skills: research-ideas, pdf-read; MCP: Consensus and ResearchFastTrack. The coordinating reviewer uses Astra xhigh; leaf retrieval reviewers use Sol medium. Main-session follow-ups have no lifetime dispatch cap, with one active reviewer at a time. Each review is a one-shot task; supply prior reports for continuation. Reviewer may spawn up to four child reviewers, four concurrently; leaf children cannot delegate. No Zotero or computational experiments. Authored reports and partial artifacts preserved locally; no coordinator wall-clock deadline, independent 10-minute leaf deadlines with finalization reserves, live activity checkpoints, and bounded output. Pass a narrowly ranked task with essential versus optional deliverables, relevant context and absolute source paths; parent conversation is not copied.',
     parameters:Type.Object({task:Type.String({minLength:1,maxLength:60000,description:'Research question, scope, sources, constraints, child responsibilities and expected evidence.'})}),
     async execute(_id,params,signal,onUpdate,ctx) {
       if(!params.task.trim()) throw new Error('Task must be non-empty');
       if(active>=maxConcurrent) throw new Error(`At most ${maxConcurrent} literature reviewers may run concurrently here`);
-      if(dispatched>=maxDispatches) throw new Error('Four-dispatch budget reached for this process; continue synthesis without new delegates');
+      if(dispatched>=maxDispatches) throw new Error('Four-child dispatch budget reached for this review; continue synthesis without new delegates');
       if(signal?.aborted) throw new Error('Cancelled before dispatch');
       const currentScript=process.argv[1];
       if(!currentScript || !fs.existsSync(currentScript)) throw new Error('Cannot resolve Pi CLI entry point');
