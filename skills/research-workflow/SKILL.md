@@ -1,6 +1,6 @@
 ---
 name: research-workflow
-description: Organize research questions, investigations, notebooks, findings and evidence; use for research project structure, ablation sprawl, literature-first Quarto sites and experiment reporting. Not a literature-search or experiment launcher.
+description: Organize research questions, investigations and evidence; use for experiment planning/reporting, comparative-training and resumability checklists, literature handoff/integration, ablation sprawl and Quarto sites. Not a literature-search or experiment launcher.
 compatibility: Use each project's environment and execution conventions on macOS or Linux. Quarto is optional; no shared account, filesystem, tracker or package manager is assumed.
 ---
 
@@ -31,7 +31,8 @@ Apply only what the task needs; a small coding change does not require a site or
 
 - Plans, ablations, results indexes or paper mappings: [investigations and evidence](references/investigations-and-evidence.md).
 - Teaching notebooks or selected code/results: [notebooks](references/notebooks.md).
-- Before executing or managing jobs: [execution environments](references/execution-environments.md).
+- Before comparative training or long runs, and when reviewing/resuming them: [training and checkpoints](references/training-and-checkpoints.md), plus [execution environments](references/execution-environments.md) for job management.
+- Before literature delegation and when integrating a handoff/update: [literature integration](references/literature-integration.md).
 - Quarto configuration, rendering or navigation: [Quarto](references/quarto.md).
 - Plots and figure review: use `scientific-visualization`; PDF inspection: use `pdf-read`.
 

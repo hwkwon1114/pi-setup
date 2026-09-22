@@ -16,6 +16,12 @@ Select only plots justified by the research question and available evidence. The
 | Are spatial fields reproduced? | Reference, predicted, and error maps | Coordinates, geometry/aspect when meaningful, units, common scales for comparable fields |
 | Which design choices matter? | Paired ablations or sensitivity curves | Controlled changes, interactions/confounding, matched evaluation conditions |
 
+## Performance comparisons and example selection
+
+Lead with full held-out aggregates and error distributions, respecting trajectory/group dependence. Illustrative traces supplement, not replace, full-set evidence: even a randomly selected single trace does not establish representative performance.
+
+Select multiple examples with a recorded error-independent rule (such as a fixed seed), stratifying over relevant conditions when feasible. Match example IDs, axes, horizons and observation/control access across methods; disclose selection, omissions and aggregation. Best/worst or error-quantile cases belong only in explicitly labeled diagnostics alongside full-set results, never as unbiased method comparisons.
+
 ## Alignment and missingness
 
 - Verify coordinate systems, ordering, sampling intervals, time origins, and unit conversions before comparing outputs.
