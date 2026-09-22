@@ -1,7 +1,7 @@
 # pi setup (portable)
 
 Reproducible copy of the pi agent home (`~/.pi/agent`): shared working preferences,
-skills, the literature-reviewer extension/role, and provider/MCP configuration.
+skills, extensions (literature reviewer and opt-in Codex Fast), and provider/MCP configuration.
 
 ## Install on another machine
 
@@ -80,9 +80,39 @@ instructions belong on that machine, not in shared configuration.
 | `config/mcp.json` | MCP servers: `consensus`, `researchfasttrack` (lazy, OAuth) |
 | `skills/` | exploratory-data-analysis, paper-summary, pdf-read, research-workflow, scientific-visualization, skill-maintenance, statistical-analysis, zotero-sync |
 | `extensions/literature-reviewer/` | `literature_review` delegation tool |
+| [`extensions/codex-fast/`](extensions/codex-fast/README.md) | `/fast on\|off\|status`: Codex priority tier, default off; model/thinking unchanged |
 | `roles/literature-reviewer/` | Role skills (`research-ideas`) used by that extension |
 | `optional/mineru/` | Installer + pinned lockfile for the optional MinerU equation backend |
 | `bin/common.sh` | Cross-platform helpers: agent home, OS, python, venv layout, symlink test |
+
+## Manual Codex accounts
+
+Use `bin/pi-account` from your terminal (not a Pi slash command):
+
+```bash
+~/pi-setup/bin/pi-account create second
+~/pi-setup/bin/pi-account use second
+# Inside that Pi instance: /login, then select Codex and sign in with account two.
+~/pi-setup/bin/pi-account use default
+~/pi-setup/bin/pi-account list
+```
+
+Your existing `~/.pi/agent` login is the `default` profile and is never copied or
+replaced. Named profiles live outside this repository in `~/.pi/codex-accounts/`,
+created with private permissions. Each has separate credentials, sessions,
+settings and model catalogs. Run the appropriate `use` command to switch;
+there is no in-session `/account`, automatic balancing or quota failover yet.
+Use only accounts you are authorized to access under the provider's policies.
+
+New profiles are deliberately bare: global extensions (including `/fast`),
+skills and settings are not copied. Project settings/resources and ambient
+provider environment variables can still apply. This is credential-directory
+separation, not a security sandbox. No sessions are migrated automatically;
+explicit Pi session arguments remain your responsibility. To continue a profile's
+own latest session, append `-c`. `PI_ACCOUNT_ROOT` and
+`PI_ACCOUNT_DEFAULT_DIR` override the two locations if needed.
+
+Offline wrapper check: `bash tests/test-accounts.sh` (Linux; fake Pi, no network).
 
 ## Deliberately not packaged
 
@@ -98,7 +128,7 @@ Credentials and machine state stay on each machine:
 ```
 
 Covers script syntax, CRLF, config JSON, skill frontmatter and cross-references, the
-extension's own unit tests, install/export round trip (including paths with spaces and
+extensions' unit tests (Codex Fast tests require Node native TypeScript support), install/export round trip (including paths with spaces and
 idempotent reruns), and MinerU dry-runs for both `bin/` and Windows `Scripts/` layouts.
 Checks needing an absent tool (`python3`, `uv`, `node`) are skipped or invert to an
 error-message assertion, so the suite is green on a bare machine too.

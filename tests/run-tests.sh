@@ -57,8 +57,8 @@ fi
 
 echo "[4] extension unit tests"
 if command -v node >/dev/null 2>&1; then
-  for t in extensions/literature-reviewer/test-*.mjs; do
-    check "$(basename "$t")" "cd extensions/literature-reviewer && node --test '$(basename "$t")'"
+  for t in extensions/*/test-*.mjs; do
+    check "$t" "cd '$(dirname "$t")' && node --test '$(basename "$t")'"
   done
 else
   echo "  skip (no node)"

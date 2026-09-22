@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# Manual isolated Pi profiles. Never reads/copies credentials or rotates accounts.
+set -euo pipefail
+usage() {
+  printf '%s\n' 'Usage: pi-account list | create NAME | use NAME [pi arguments...]' \
+    'Use "default" for your existing ~/.pi/agent. Named profiles start separately.'
+}
+ROOT="${PI_ACCOUNT_ROOT:-$HOME/.pi/codex-accounts}"
+DEFAULT="${PI_ACCOUNT_DEFAULT_DIR:-$HOME/.pi/agent}"
+valid() { [[ "$1" =~ ^[a-zA-Z0-9][a-zA-Z0-9_-]{0,47}$ ]]; }
+command="${1:-}"; [[ $# -eq 0 ]] || shift
+case "$command" in
+  list)
+    [[ $# -eq 0 ]] || { usage >&2; exit 2; }
+    printf 'default\n'
+    if [[ -d "$ROOT" ]]; then
+      for path in "$ROOT"/*; do
+        [[ -d "$path" && ! -L "$path" ]] || continue
+        name="${path##*/}"
+        if valid "$name" && [[ "$name" != default ]]; then printf '%s\n' "$name"; fi
+      done
+    fi ;;
+  create)
+    [[ $# -eq 1 ]] && valid "$1" && [[ "$1" != default ]] || { usage >&2; exit 2; }
+    umask 077
+    mkdir -p -- "$ROOT"
+    # mkdir without -p refuses overwrites, including existing symlinks.
+    mkdir -- "$ROOT/$1"
+    chmod 700 -- "$ROOT/$1"
+    printf 'Created %s\nLaunch with: %s use %s\nThen enter /login and select Codex.\n' "$ROOT/$1" "$0" "$1"
+    ;;
+  use)
+    [[ $# -ge 1 ]] && valid "$1" || { usage >&2; exit 2; }
+    name="$1"; shift
+    if [[ "$name" == default ]]; then dir="$DEFAULT"; else dir="$ROOT/$name"; fi
+    [[ -d "$dir" ]] || { printf 'Profile does not exist: %s\n' "$name" >&2; exit 2; }
+    if [[ "$name" != default && -L "$dir" ]]; then
+      printf 'Refusing symlinked named profile: %s\n' "$name" >&2; exit 2
+    fi
+    # Avoid silently continuing an inherited session directory from another account.
+    unset PI_CODING_AGENT_SESSION_DIR PI_SESSION_ID PI_SESSION_FILE PI_PROVIDER PI_MODEL PI_REASONING_LEVEL
+    export PI_CODING_AGENT_DIR="$dir"
+    printf 'Pi profile: %s (%s)\n' "$name" "$dir" >&2
+    exec pi --provider openai-codex "$@"
+    ;;
+  -h|--help|help) usage ;;
+  *) usage >&2; exit 2 ;;
+esac
