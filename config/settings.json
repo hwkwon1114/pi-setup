@@ -7,6 +7,7 @@
     "anthropicExtraUsage": false
   },
   "packages": [
+    "npm:@henryqw/pi-multi-codex@2.0.0",
     "npm:@rahularya01/pi-cursor@latest",
     "npm:pi-antigravity@latest",
     {

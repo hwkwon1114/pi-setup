@@ -1,7 +1,8 @@
 # pi setup (portable)
 
 Reproducible copy of the pi agent home (`~/.pi/agent`): shared working preferences,
-skills, extensions (literature reviewer and opt-in Codex Fast), and provider/MCP configuration.
+skills, extensions (literature reviewer, multi-account Codex and opt-in Codex Fast),
+and provider/MCP configuration.
 
 ## Install on another machine
 
@@ -85,34 +86,37 @@ instructions belong on that machine, not in shared configuration.
 | `optional/mineru/` | Installer + pinned lockfile for the optional MinerU equation backend |
 | `bin/common.sh` | Cross-platform helpers: agent home, OS, python, venv layout, symlink test |
 
-## Manual Codex accounts
+## Multiple Codex accounts (same session)
 
-Use `bin/pi-account` from your terminal (not a Pi slash command):
+The settings template includes `@henryqw/pi-multi-codex@2.0.0`.
+For an existing installation, run this in a regular terminal, outside Pi:
 
 ```bash
-~/pi-setup/bin/pi-account create second
-~/pi-setup/bin/pi-account use second
-# Inside that Pi instance: /login, then select Codex and sign in with account two.
-~/pi-setup/bin/pi-account use default
-~/pi-setup/bin/pi-account list
+pi install npm:@henryqw/pi-multi-codex@2.0.0
 ```
 
-Your existing `~/.pi/agent` login is the `default` profile and is never copied or
-replaced. Named profiles live outside this repository in `~/.pi/codex-accounts/`,
-created with private permissions. Each has separate credentials, sessions,
-settings and model catalogs. Run the appropriate `use` command to switch;
-there is no in-session `/account`, automatic balancing or quota failover yet.
+This is also required after a resources-only update: pulling this repository does
+not change local package settings. Restart your normal Pi, then:
+
+1. `/login`: authenticate **OpenAI Codex** (slot 1), if not already signed in.
+2. `/codex-add`: create the next numbered slot.
+3. `/login`: select **OpenAI Codex #2** (or the new slot) and sign in with the
+   other account. Repeat to add more accounts.
+4. Restart Pi or update model scope, then run `/codex-status`.
+5. Use `/codex-switch` to switch authenticated accounts within the same session.
+
+If model scope is restricted (`enabledModels` or a scoped session), allow the
+numbered provider's exact model aliases too, such as
+`openai-codex-2/gpt-6-astra`; scoped switching requires eligible aliases.
+Accounts must support the selected model; routing preserves the model ID.
+
+The extension performs quota-based startup routing and automatic HTTP 429
+failover by default. Its documented automatic-switching opt-out is
+`{"autoSwitchOn429": false}` in
+`~/.pi/agent/config/pi-multi-codex/config.json`.
+Credentials stay on each machine and must be authenticated there; neither this
+repository nor the extension imports accounts from separate profiles.
 Use only accounts you are authorized to access under the provider's policies.
-
-New profiles are deliberately bare: global extensions (including `/fast`),
-skills and settings are not copied. Project settings/resources and ambient
-provider environment variables can still apply. This is credential-directory
-separation, not a security sandbox. No sessions are migrated automatically;
-explicit Pi session arguments remain your responsibility. To continue a profile's
-own latest session, append `-c`. `PI_ACCOUNT_ROOT` and
-`PI_ACCOUNT_DEFAULT_DIR` override the two locations if needed.
-
-Offline wrapper check: `bash tests/test-accounts.sh` (Linux; fake Pi, no network).
 
 ## Deliberately not packaged
 
