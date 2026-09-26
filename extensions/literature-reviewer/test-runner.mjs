@@ -24,14 +24,14 @@ test('coordinator stays Astra/xhigh and leaves use Sol/medium',t=>{
  for(const rel of ['roles/literature-reviewer/skills/research-ideas','skills/pdf-read']) {
   const dir=path.join(root,rel);fs.mkdirSync(dir,{recursive:true});fs.writeFileSync(path.join(dir,'SKILL.md'),'fixture');
  }
- for(const [depth,model,thinking] of [[1,'openai-codex/gpt-6-astra','xhigh'],[2,'openai-codex/gpt-5.6-sol','medium']]) {
+ for(const [depth,model,thinking] of [[1,'openai-codex/gpt-6-astra','xhigh'],[2,'openai-codex/gpt-6-sol','medium']]) {
   const selected=select(depth);assert.deepEqual(selected,{model,thinking});
   const args=buildArgs({cli:'pi.js',extension:'index.ts',agentDir:root,promptFile:'role.md',depth,...selected});
   assert.equal(args[args.indexOf('--model')+1],model);
   assert.equal(args[args.indexOf('--thinking')+1],thinking);
   assert.equal(args[args.indexOf('--tools')+1].split(',').includes('literature_review'),depth===1);
  }
- assert.throws(()=>buildArgs({cli:'pi.js',agentDir:root,model:'openai-codex/gpt-5.6-sol',thinking:'medium',depth:3}),/Delegation depth exceeded/);
+ assert.throws(()=>buildArgs({cli:'pi.js',agentDir:root,model:'openai-codex/gpt-6-sol',thinking:'medium',depth:3}),/Delegation depth exceeded/);
  assert.match(source,/leaf retrieval reviewers use Sol medium/);
  for(const file of ['README.md','literature-reviewer.md']) {
   const text=fs.readFileSync(new URL(file,import.meta.url),'utf8');

@@ -73,7 +73,7 @@ export default async function (pi: ExtensionAPI) {
       const dispatchedDepth=depth+1;
       const model=dispatchedDepth===1
         ? 'openai-codex/gpt-6-astra'
-        : 'openai-codex/gpt-5.6-sol';
+        : 'openai-codex/gpt-6-sol';
       const thinking=dispatchedDepth===1 ? 'xhigh' : 'medium';
       const childBudget=planBudget({depth:dispatchedDepth,parentBudget:budget});
       active++;dispatched++;
