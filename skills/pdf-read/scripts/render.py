@@ -35,9 +35,11 @@ def select_pages(spec, total):
 
 
 def run(args, timeout):
+    # The resolved Poppler executable needs no caller credentials or provider tokens.
+    # Use an explicit environment rather than forwarding the agent's entire environment.
     return subprocess.run(args, capture_output=True, text=True, encoding='utf-8',
                           errors='replace', timeout=timeout,
-                          env={**os.environ, 'LC_ALL': 'C'})
+                          env={'LC_ALL': 'C', 'PATH': os.defpath})
 
 
 def save(out, manifest):
@@ -63,14 +65,15 @@ def main():
     out = args.out.expanduser().resolve()
     if not source.is_file():
         parser.error('Input must be an existing PDF file')
-    for tool in ('pdfinfo', 'pdftoppm'):
-        if not shutil.which(tool):
+    tools = {name: shutil.which(name) for name in ('pdfinfo', 'pdftoppm')}
+    for tool, executable in tools.items():
+        if not executable:
             parser.error(f'Missing dependency: {tool}; no automatic installation performed')
     if out.exists():
         parser.error('Output directory already exists; choose a new directory')
     try:
         original_hash = digest(source)
-        info = run(['pdfinfo', str(source)], args.timeout)
+        info = run([tools['pdfinfo'], str(source)], args.timeout)
         if info.returncode:
             raise ValueError(info.stderr.strip() or 'pdfinfo failed')
         match = re.search(r'^Pages:\s+(\d+)\s*$', info.stdout, re.MULTILINE)
@@ -80,7 +83,7 @@ def main():
         pages = select_pages(args.pages, total)
         if len(pages) > args.max_pages:
             raise ValueError(f'Selected {len(pages)} pages exceeds --max-pages {args.max_pages}')
-        version = run(['pdftoppm', '-v'], args.timeout)
+        version = run([tools['pdftoppm'], '-v'], args.timeout)
         out.mkdir(parents=True, exist_ok=False)
     except (OSError, ValueError, subprocess.TimeoutExpired) as exc:
         parser.error(str(exc))
@@ -102,7 +105,7 @@ def main():
         for page in pages:
             prefix = out / f'page-{page:04d}'
             image = prefix.with_suffix('.png')
-            command = ['pdftoppm', '-f', str(page), '-l', str(page), '-singlefile',
+            command = [tools['pdftoppm'], '-f', str(page), '-l', str(page), '-singlefile',
                        '-scale-to', str(args.size), '-png', str(source), str(prefix)]
             try:
                 result = run(command, args.timeout)

@@ -62,7 +62,7 @@ Preview first, from the project root, naming the project's configuration:
 python3 <path to this skill>/scripts/sync-zotero.py --config <project>/zotero-sync.config.json --dry-run
 ```
 
-Inspect the preview for unexpected scope, duplicate matches, missing mapped items, metadata coverage failures, or changed PDF hashes. Resolve identity ambiguity before importing; do not delete state or remove duplicates merely to make the command succeed. A preview reads the live library but performs no remote writes, uploads, or state-file saves. It may create a local advisory lock file. It reports planned creates, collection/access-tag updates, and attachment actions; summary created/updated counts are planned counts in preview mode. It is not a complete field-level JSON diff. Actual Zotero item-schema acceptance and storage permissions are not fully validated by a preview.
+Inspect the preview for unexpected scope, duplicate matches, missing mapped items, metadata coverage failures, or changed PDF hashes. Resolve identity ambiguity before importing; preserve mapping state and duplicate records rather than erasing evidence to force a successful command. A preview reads the live library but performs no remote writes, uploads, or state-file saves. It may create a local advisory lock file. It reports planned creates, collection/access-tag updates, and attachment actions; summary created/updated counts are planned counts in preview mode. It is not a complete field-level JSON diff. Actual Zotero item-schema acceptance and storage permissions are not fully validated by a preview.
 
 For an authorized `sync` request, continue without another approval prompt when the preview matches the established scope:
 

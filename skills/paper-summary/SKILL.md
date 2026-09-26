@@ -12,7 +12,7 @@ Spend context on decisive evidence, not whole-document dumps. Honor the user's q
 1. Use the supplied/local paper and existing notes first. Retain exact version and URL/path; ask only about ambiguity blocking progress. Resolving this paper's access is not a literature sweep.
 2. Reuse page-linked extraction and checked notes for the same source. Match hashes when available; filenames alone are insufficient. A hash verifies identity, not note correctness. Label prior checks as prior, not fresh verification. Changed versions, missing provenance or new questions require checking relevant source passages again.
 3. For an overview, inspect framing, method/assumptions, main evidence/results and limitations—not just the abstract. For a focused question, inspect that claim and its dependencies. Follow an appendix or qualification when it could change the answer. Read bounded passages/pages; leave bulk extraction on disk.
-4. Use the host's `pdf-read` skill for PDFs, including its required visual checks. Do not duplicate parsers or skip verification to save tokens. For HTML/text, retain section or other stable passage locators.
+4. Use the host's `pdf-read` skill for PDFs, including its required visual checks. Reuse the existing PDF parser and complete its required verification even when context is scarce. For HTML/text, retain section or other stable passage locators.
 
 Abstract-only or unreadable evidence permits a labeled limited summary of what the source *reports*, not invented details. Expand reading or narrow the claim when evidence is missing.
 

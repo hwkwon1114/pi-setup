@@ -36,9 +36,11 @@ def select_pages(spec, total):
 
 
 def run(args, timeout):
+    # The resolved Poppler executable needs no caller credentials or provider tokens.
+    # Use an explicit environment rather than forwarding the agent's entire environment.
     return subprocess.run(args, capture_output=True, text=True, encoding='utf-8',
                           errors='replace', timeout=timeout,
-                          env={**os.environ, 'LC_ALL': 'C'})
+                          env={'LC_ALL': 'C', 'PATH': os.defpath})
 
 
 def write_manifest(out, data):

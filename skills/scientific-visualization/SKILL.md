@@ -2,7 +2,7 @@
 name: scientific-visualization
 description: Design, create, edit, restyle, and review scientific data plots and figures for manuscripts, presentations, and analysis. Use whenever making or changing a figure, plot, chart, or panel - including writing or running a plotting script, calling Matplotlib, Seaborn, savefig, or a figure generator; adjusting axes, ticks, legends, colors, palettes, fonts, annotations, or layout; adding error bars or uncertainty displays; building multi-panel layouts; exporting PDF, PNG, SVG, or TIFF; naming figure files and captions; and reviewing rendered output for clipping, overlap, contrast, or size. Covers simulation results, model validation, optimization histories, and computational benchmarks. Not for AI-generated illustrations or system architecture diagrams.
 license: MIT
-compatibility: Plotting requires a project Python environment with Matplotlib; Seaborn is optional. Do not install dependencies without approval.
+compatibility: Plotting requires a project Python environment with Matplotlib; Seaborn is optional. Install dependencies only after explicit approval.
 metadata:
   adaptation: Local Pi adaptation of K-Dense scientific-visualization
 ---
@@ -49,9 +49,9 @@ Use stable semantic names, independent of manuscript numbering:
 - LaTeX label: `fig:prediction-error-comparison`.
 - Short caption opening: `Prediction errors across evaluation conditions.`
 
-Extend names with a meaningful condition only when needed to distinguish outputs. Avoid `plot1`, `final_final`, conclusion-based names, spaces, and timestamps in the canonical filename. Use version control for revisions; preserve separate run IDs in provenance when needed. Respect an existing coherent project convention rather than renaming artifacts without approval.
+Extend names with a meaningful condition only when needed to distinguish outputs. Avoid `plot1`, `final_final`, conclusion-based names, spaces, and timestamps in the canonical filename. Use version control for revisions; preserve separate run IDs in provenance when needed. Preserve an existing coherent project naming convention; rename prior artifacts only after explicit approval.
 
-Keep figure numbering in the manuscript. If submission rules require `Fig1.tif`, create submission copies with a mapping to canonical names; do not rename source artifacts. Never overwrite existing figures silently: obtain approval or choose a distinct output destination.
+Keep figure numbering in the manuscript. If submission rules require `Fig1.tif`, create submission copies with a mapping to canonical names; do not rename source artifacts. Preserve existing figures: replace only with explicit approval, otherwise choose a distinct output destination.
 
 A caption should identify what each panel shows and include applicable evaluation conditions, transformations, sample size and independent replication unit, uncertainty definition, symbols/abbreviations, and essential interpretation. Do not invent these details. Keep methods out of the artwork, not out of the record.
 
@@ -60,7 +60,7 @@ A caption should identify what each panel shows and include applicable evaluatio
 - Preserve raw inputs, preprocessing, exclusions, seeds, aggregation, smoothing/binning parameters, model/run identifiers, and generating code. Record actual output paths and environment versions.
 - Keep missing, zero, censored, excluded, and out-of-range data distinct. Show missing observations as gaps; separately style and disclose interpolation or model estimates.
 - Name uncertainty precisely: SD, SE, confidence interval, prediction interval, posterior credible interval, etc. State the level and independent sampling unit. They are not interchangeable.
-- Do not treat correlated time samples as independent replicates. Never accept automatic aggregation/bootstrap intervals without checking the data structure.
+- Do not treat correlated time samples as independent replicates. Check the data structure before accepting automatic aggregation or bootstrap intervals.
 - Bars and area encodings normally start at zero. Nonzero line/scatter axes can be valid; do not engineer misleading comparisons. Prefer aligned panels to dual axes.
 - Preserve equal scales and color normalization across directly compared panels. Diverging colors require a meaningful center; sequential colors represent ordered magnitude. Avoid rainbow maps and decorative 3D.
 - Declare transformations and handling of invalid values on log scales. Scale marker area, not radius, when encoding magnitude.
@@ -81,12 +81,12 @@ A caption should identify what each panel shows and include applicable evaluatio
 ## Export and review
 
 - Default to vector PDF plus a PNG preview for ordinary manuscript plots; provide SVG when editability is requested. Raster fields may remain embedded in vector files.
-- Set physical size deliberately. Journal dimensions, accepted formats, fonts, and raster DPI depend on the exact journal, figure type, and submission phase. Verify official requirements when relevant; never claim a universal `300 DPI` rule.
+- Set physical size deliberately. Journal dimensions, accepted formats, fonts, and raster DPI depend on the exact journal, figure type, and submission phase. Verify official requirements when relevant; treat `300 DPI` as a context-dependent setting, not a universal rule.
 - Dense artists such as shaded meshes, large scatters, and fields make vector files enormous because every primitive is stored. Rasterize the dense artist only, keeping text and axes vector, and size figures to their destination width so labels are not shrunk by later downscaling. For rasterization, physical size, and out-of-range colour handling, read [references/export-density-and-size.md](references/export-density-and-size.md).
 - Preserve intended dimensions: avoid `bbox_inches='tight'` when exact page size matters. Do not combine `tight_layout()` with constrained layout.
 - Do not claim that converting PNG to PDF creates vector art or that upsampling adds information.
 - Check the actual delivered files for clipping, overlaps, line/marker visibility, axis units, legend identity, colorbar limits, panel ordering, and readability at final size. Inspect PDF rendering when PDF is the deliverable; a PNG preview alone does not verify it. Follow the available PDF-reading workflow for that check.
-- Plotting libraries do not report layout defects: text that overflows its axes, escapes an annotated region, or collides with other text raises nothing and is only visible on inspection. Where a figure is regenerated by script, measure rendered text extents before saving and fail the script on violations, so a defect cannot be committed unseen. Read [references/layout-verification.md](references/layout-verification.md) when adding this check. Geometry checks cover placement only; they do not judge encoding, accessibility, or correctness, and they do not replace viewing the figure.
+- Plotting libraries do not report layout defects: text that overflows its axes, escapes an annotated region, or collides with other text raises nothing and is only visible on inspection. Where a figure is regenerated by script, measure rendered text extents before saving and fail the script on violations, so a defect cannot be committed unseen. Read [references/layout-verification.md](references/layout-verification.md) when adding this check. Geometry checks cover placement only. Assess encoding, accessibility, and scientific correctness separately, and view the delivered figure.
 - Confirm data/transformations and interval definitions, not just aesthetics. Compare plotted values to the source and inspect warnings.
 - For web outputs, provide alt text or a longer description and an appropriate data alternative.
 - Deliver figure paths, source-code path, caption, provenance location, checks completed, and unresolved limitations. Automated checks are not scientific validation or journal acceptance.

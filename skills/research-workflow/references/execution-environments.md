@@ -4,7 +4,7 @@ Do not infer project relationships from machine names. Independent projects may 
 
 ## Inspect before launch
 
-Establish the current host, project, supported interpreter/environment, scheduler or direct-launch convention, resource allocation, output roots, execution authorization, and budget. Use existing working setup instructions. No mandatory uv or environment migration. Older Linux compatibility must be checked, not inferred from local success. Never install packages into a shared environment without approval.
+Establish the current host, project, supported interpreter/environment, scheduler or direct-launch convention, resource allocation, output roots, execution authorization, and budget. Use existing working setup instructions. No mandatory uv or environment migration. Older Linux compatibility must be checked, not inferred from local success. Install packages into a shared environment only after explicit approval.
 
 Keep scientific settings separate from operational settings. Different hardware, precision, solver versions, seeds, parallel reduction order, or thread settings can change results; record material differences and validate numerical agreement before pooling runs. Identical source is not a guarantee of bitwise reproducibility.
 

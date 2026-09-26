@@ -58,6 +58,6 @@ A scientifically justified focal entity may be highlighted against muted context
 
 - Inspect at intended final size on the actual background. Check thin strokes, small markers, adjacent fills, transparency, and legend samples—not just large color swatches.
 - Check grayscale for loss of entity identity. Similar lightness is common even in colorblind-friendly palettes; redundant cues must do real work.
-- When suitable tooling is already available, simulate common red/green deficiencies (protan/deutan) and blue/yellow deficiency (tritan). Do not install tools or transmit private figures without approval. Report checks unavailable rather than claiming they passed.
+- When suitable tooling is already available, simulate common red/green deficiencies (protan/deutan) and blue/yellow deficiency (tritan). Install tools or transmit private figures only with explicit approval. Report checks unavailable rather than claiming they passed.
 - Contrast against the background and pairwise category separation are different tests. WCAG web guidance uses 3:1 for graphical objects required for understanding and 4.5:1 for normal text, with applicability/exceptions; these are not universal journal acceptance rules or pairwise color-distance thresholds.
 - Simulations are approximations, not proof for every viewer. Seek user feedback when feasible. If identities remain ambiguous, change encoding/layout instead of relying on a palette label.

@@ -14,7 +14,7 @@ Check Quarto availability/version and OS compatibility. Read official documentat
 - https://quarto.org/docs/projects/code-execution.html
 - https://quarto.org/docs/authoring/notebook-embed.html
 
-The notebook-embedding reference is a discovery pointer, not a claim its options were tested. Do not install Quarto or LaTeX without approval; a Linux cluster may require a permitted user-space install or rendering elsewhere. HTML avoids requiring a PDF/LaTeX toolchain.
+The notebook-embedding reference is a discovery pointer, not a claim its options were tested. Installation of Quarto or LaTeX requires explicit approval; a Linux cluster may require a permitted user-space install or rendering elsewhere. HTML avoids requiring a PDF/LaTeX toolchain.
 
 ## Publishing must not execute investigations
 
@@ -41,7 +41,7 @@ Check rendered anchors, not only Markdown links: heading IDs differ between GitH
 - Check local links, fragments, includes, downloads, and copied-resource hashes.
 - Visually inspect equations, tables, figures, citations, navigation, and layout at useful sizes. Math parsing is not equation-fidelity verification.
 - Exercise search, filters, and cross-page links in a browser; retain a static/CSV alternative for interactive tables.
-- Test network-dependent math/fonts/assets separately. A localhost site may still load CDNs; do not claim offline support without checking.
+- Test network-dependent math/fonts/assets separately. A localhost site may still load CDNs; claim offline support only after checking.
 - Use localhost for preview. Stop temporary validation servers; do not start a persistent service or public deployment without appropriate scope.
 
 Record source prepared, render completed, browser interaction tested, visual checks performed, and offline/platform support separately. Preserve test failures and their corrections. A working Mac site does not establish Quest/Vision compatibility or accessibility certification.

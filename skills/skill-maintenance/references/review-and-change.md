@@ -2,7 +2,7 @@
 
 ## Inventory and provenance
 
-Record source location, reviewed commit/hash, installed version and ownership. Check symlinks and package/dotfile management: the live file shows behavior, but its manager's source may be the correct write target. Never update an upstream-managed package cache in place. Offer a maintained local delta or upstream contribution instead; publishing requires separate permission.
+Record source location, reviewed commit/hash, installed version and ownership. Check symlinks and package/dotfile management: the live file shows behavior, but edits may belong in its manager's source. Keep upstream-managed package caches unchanged. Offer a maintained local delta or upstream contribution instead; publishing requires separate permission.
 
 For a new skill, examine related skills first. Record reused methodology, new shared improvements and deliberate differences. Prefer specific task triggers to broad 'every tool call' triggers. Keep the core small; references should name the condition that requires reading them. Do not require a fixed line count when it harms clarity.
 
