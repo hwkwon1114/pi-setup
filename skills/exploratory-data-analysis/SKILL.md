@@ -95,6 +95,8 @@ quantiles = np.nanpercentile(residuals, [1, 5, 25, 50, 75, 95, 99])
 print("Residual quantiles [1%, 5%, 25%, 50%, 75%, 95%, 99%]:\n", quantiles)
 ```
 
+Run-record and split-leakage triage (planning example, not a finding about any dataset): given an existing run table and split manifest, first identify the actual subject/group key and split identity. Check key uniqueness and join cardinality; compare group IDs across training and held-out partitions; trace where scaling and feature selection were fitted. Report overlap counts and provenance in the approved private record, not raw identifiers in a public summary. An overlap or missing preprocessing provenance blocks an untouched-test claim; it does not authorize reshuffling, deleting runs, or retraining. See `references/computational-eda.md` for failed-run and GP-specific checks.
+
 ## Limitations
 
 - Exploratory and diagnostic only: EDA diagnoses properties of the data; it does not constitute confirmatory statistical inference or causal proof.

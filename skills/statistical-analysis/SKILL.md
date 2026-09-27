@@ -107,6 +107,8 @@ Report: raw-scale effect, interval, observed units, missing pairs, test/selectio
 
 For clustered data, resampling must draw independent clusters (or suitable blocks), preserving the whole within-cluster structure and any justified pairing; choose the interval method and number of replicates for the actual design rather than copying a generic bootstrap function.
 
+Bayesian decision example (planning, not a posterior result): if asked whether two methods are practically equivalent, establish a domain-justified equivalence margin before examining the contrast, specify what the posterior conditions on, and check prior and likelihood sensitivity. A high posterior probability within that margin is conditional on the chosen model and does not by itself certify frequentist equivalence or independence of repeated observations.
+
 ## Limitations
 
 - Observational and statistical scope: Statistical associations and interval estimates do not prove physical mechanisms or causal identification without explicit structural assumptions.
@@ -120,4 +122,4 @@ For clustered data, resampling must draw independent clusters (or suitable block
 | `Multiplicity inflation / False discovery` | Multiple endpoints, seeds, or ablations evaluated without adjustment | Define primary estimand; apply Benjamini-Hochberg FDR or Holm-Bonferroni correction |
 | `Cluster dependence ignored` | Multiple trajectories from the same system treated as independent cases | Aggregate to cluster level or employ clustered bootstrap / hierarchical mixed models |
 | `P-value reported as zero` | Numerical rounding of extremely small floating-point values | Report as `p < 1e-16` or bounded interval rather than printing `p = 0` |
-| `Assumption violation on residuals` | Heteroscedasticity or extreme heavy tails | Apply robust standard errors (HC3), log-transformations, or non-parametric tests |
+| `Assumption violation on residuals` | Heteroscedasticity or extreme heavy tails | Diagnose the design and estimand first; assess a justified robust or model-based sensitivity analysis. A transformation or alternative test may change the estimand and is not an automatic switch. |

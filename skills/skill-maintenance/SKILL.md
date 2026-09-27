@@ -77,7 +77,14 @@ Audit and stage example (procedure, not an executable recipe):
    activation separately from installation.
 ```
 
-Follow `references/review-and-change.md` for the full staging and verification contract; this example does not replace it.
+Other request patterns (decide scope before acting):
+
+- **"Audit this installed skill for broken references."** Identify its manager and inspect the full bundle and declared links; report confirmed defects separately from scanner false positives. An audit alone changes no live file.
+- **"Create a skill for this recurring task."** Look for an existing skill, define triggers and exclusions, stage a complete bundle outside discovery, test the documented commands and a boundary case, and present the diff. Creation is not installation unless the request authorizes both.
+- **"Capture this failure for later improvement."** With an explicit capture request, save a private observation with evidence and a proposed target; do not turn it into an active rule or enable continuous logging.
+- **"Install the approved staged revision."** Recheck the entire live baseline, stop on drift, back up outside discovery, apply only approved files and compare installed bytes; report activation separately. A prior audit or a config file does not authorize installation.
+
+Follow `references/review-and-change.md` for the full staging and verification contract; these scenarios do not replace it.
 
 ## Limitations
 

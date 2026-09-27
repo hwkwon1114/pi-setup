@@ -85,11 +85,11 @@ Render page 3 as a PNG image for visual inspection:
 python3 scripts/render.py /absolute/path/to/paper.pdf --out /absolute/path/to/render-dir --pages 3 --size 1200
 ```
 
-Read extracted page text and review warnings:
+For all-page extraction of a PDF within the default 50-page ceiling, omit `--pages` and use a new output directory. This extracts text; it does not mean all pages were read or visually checked:
 ```bash
-cat /absolute/path/to/extract-dir/manifest.json
-cat /absolute/path/to/extract-dir/pages/0001.txt
+python3 scripts/extract.py /absolute/path/to/paper.pdf --out /absolute/path/to/new-extract-dir
 ```
+Use the host's file-reading tool to inspect that directory's manifest and only the page text needed for the question; review warnings and actual page indices without dumping the whole extraction into context.
 
 ## Limitations
 

@@ -64,10 +64,11 @@ Design clean, editable vector conceptual illustrations and architecture diagrams
 
 ## Examples
 
-Drafting a concept illustration prompt:
+Illustrative image-generation **prompt**, not executable Python; pass it to the available image tool using that tool's actual input format:
 ```text
-generate_image(prompt="Clean flat-vector scientific schematic of a digital twin pipeline: physical sensor on left, neural operator in center, parameter estimation feedback loop on right, generous whitespace, minimalist pastel palette")
+Clean flat-vector scientific schematic of a digital twin pipeline: physical sensor on left, neural operator in center, parameter estimation feedback loop on right, generous whitespace, minimalist pastel palette.
 ```
+For a style-match request, first inspect the permitted reference and describe its palette, spacing and pictorial motifs in the prompt; preserve the user's entities and relationships rather than copying unrelated content from the reference.
 
 Constructing structured SVG layout:
 ```xml

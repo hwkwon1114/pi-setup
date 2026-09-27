@@ -28,7 +28,7 @@ Design publication-ready, accessible, and mathematically faithful scientific fig
 
 1. Identify the figure's purpose, data paths, variables and units, independent sampling unit, and intended medium. Ask only for information blocking a truthful plot; list unresolved choices instead of inventing them.
 2. Inspect data and transformations before plotting. Distinguish measurements, predictions, interpolations, and synthetic examples. Never fabricate research results or improve appearance by changing data.
-3. Select an encoding that answers the scientific question. For validation, simulation, convergence, or benchmark plots, read [references/computational-figures.md](references/computational-figures.md).
+3. Select an encoding that answers the scientific question: aligned traces for temporal agreement, full held-out distributions before selected examples for method comparison, or maps with shared scales for comparable spatial fields when those data exist. These are alternatives, not a mandatory dashboard. For validation, simulation, convergence, or benchmark plots, read [references/computational-figures.md](references/computational-figures.md).
 4. Apply the concise-text and naming policies below. For implementation, read [references/implementation.md](references/implementation.md) and use [assets/publication.mplstyle](assets/publication.mplstyle) as a provisional starting point.
 5. Export from reproducible code, preserve provenance, and inspect the rendered output at intended final size. Separate checks actually performed from checks pending.
 
