@@ -1,9 +1,16 @@
 ---
 name: scientific-visualization
+version: 1.0.0
 description: Design, create, edit, restyle, and review scientific data plots and figures for manuscripts, presentations, and analysis. Use whenever making or changing a figure, plot, chart, or panel - including writing or running a plotting script, calling Matplotlib, Seaborn, savefig, or a figure generator; adjusting axes, ticks, legends, colors, palettes, fonts, annotations, or layout; adding error bars or uncertainty displays; building multi-panel layouts; exporting PDF, PNG, SVG, or TIFF; naming figure files and captions; and reviewing rendered output for clipping, overlap, contrast, or size. Covers simulation results, model validation, optimization histories, and computational benchmarks. Not for AI-generated illustrations or system architecture diagrams.
 license: MIT
 compatibility: Plotting requires a project Python environment with Matplotlib; Seaborn is optional. Install dependencies only after explicit approval.
 metadata:
+  author: "Hyunwoo Kwon <hwkwkon1114@gmail.com>"
+  tags:
+    - visualization
+    - matplotlib
+    - scientific-plotting
+    - data-figures
   adaptation: Local Pi adaptation of K-Dense scientific-visualization
 ---
 
@@ -12,6 +19,10 @@ metadata:
 Make the evidence easy to read, not decorative. Keep this skill general across computational research: derive terminology, quantities, units, and evaluation structure from the current project rather than assuming an application domain. Default to clean manuscript plots unless the user specifies exploration, slides, or another medium. These are behavioral instructions, not an enforced validator or journal certification.
 
 Adaptation and upstream provenance: [ATTRIBUTION.md](ATTRIBUTION.md).
+
+## Purpose
+
+Design publication-ready, accessible, and mathematically faithful scientific figures using reproducible Matplotlib code, enforcing colorblind-safe palettes, explicit uncertainty displays, and clean semantic naming.
 
 ## Workflow
 
@@ -90,3 +101,33 @@ A caption should identify what each panel shows and include applicable evaluatio
 - Confirm data/transformations and interval definitions, not just aesthetics. Compare plotted values to the source and inspect warnings.
 - For web outputs, provide alt text or a longer description and an appropriate data alternative.
 - Deliver figure paths, source-code path, caption, provenance location, checks completed, and unresolved limitations. Automated checks are not scientific validation or journal acceptance.
+
+## Examples
+
+Example figure-planning record (not a plot or evidence of observed performance):
+```text
+Question: compare held-out predictions with reference measurements.
+Inputs: verified source/run IDs, evaluation split and units; no synthetic results.
+Panels: full held-out error distribution first, then matched trajectories selected
+        without using their errors; label any extremes as diagnostics.
+Encoding: reference vs prediction with consistent colors and redundant cues.
+Output: project-approved semantic filename and caption, formats and dimensions
+        chosen for the destination; inspect each delivered rendering.
+```
+
+For implementation, use the project arrays and the guarded code in `references/implementation.md`, not fabricated prediction values.
+
+## Limitations
+
+- Data visualization only: Does not validate physical models, verify numerical correctness of simulations, or prove statistical significance.
+- Format dependencies: fonts and raster-artist resolution depend on the actual output size and destination requirements; 300 DPI is not universal.
+- Color-vision deficiency checks: A named palette alone does not certify accessibility; inspect contrast and redundant cues on the delivered rendering.
+
+## Troubleshooting
+
+| Visual Defect | Cause | Solution |
+|---|---|---|
+| `Label text clipped at boundary` | Axes bounding box insufficient or `tight_layout` collision | Use `layout="constrained"` on `plt.subplots(...)`; check margins |
+| `Huge PDF file size (>10 MB)` | Dense heatmaps or scatter clouds stored as individual vector paths | Set `rasterized=True` on the artist (e.g. `ax.pcolormesh(..., rasterized=True)`) |
+| `Unreadable font in print` | Figure exported at large canvas and downscaled for manuscript column | Set `figsize` directly to column width (e.g. 3.25 to 6.5 in) with font size 8-10 pt |
+| `Ambiguous curve distinction` | Encoding rely solely on color without redundant cues | Pair color with distinct line styles (`-`, `--`, `-.`) or markers (`o`, `s`) |

@@ -1,11 +1,30 @@
 ---
 name: zotero-sync
-description: "Synchronize a curated literature manifest with Zotero through the Zotero Web API: match existing papers, import verified bibliographic metadata, attach validated PDFs, and preserve item mappings for repeatable updates. Use when asked to sync papers or PDFs to Zotero, preview an import, or update Zotero after literature acquisition. Requires a project-supplied configuration file naming the target library, manifest, metadata, state, PDF root, and a private API key file; no account, collection, or corpus is bundled."
+version: 1.0.0
+description: "Preview or synchronize a curated project manifest with a personal Zotero library via its Web API: match papers, import verified metadata, upload validated PDFs, and preserve item mappings. Use for configured library previews or explicitly authorized writes; a config or API key alone is not write permission. Not for reading PDFs or summarizing papers."
+metadata:
+  author: "Hyunwoo Kwon <hwkwkon1114@gmail.com>"
+  tags:
+    - literature
+    - zotero
+    - bibliography
+    - pdf-sync
 ---
 
 # Zotero synchronization
 
 Keep bibliography identity, attachment availability, and reading/appraisal status separate. A missing PDF must not prevent creation of a bibliographic record. An uploaded PDF is not a fully read paper.
+
+## Purpose
+
+Synchronize a curated local literature manifest with Zotero personal libraries via the Zotero Web API, matching existing items, importing verified metadata, uploading validated PDFs, and maintaining repeatable item-key mappings.
+
+## Available Scripts
+
+| Script | Purpose | Arguments |
+|---|---|---|
+| `scripts/sync-zotero.py` | Preview or perform manifest synchronization with the Zotero Web API | `--config <path>` (required), `--dry-run` (optional) |
+| `scripts/test_sync.py` | Execute hermetic regression and security tests with mock Zotero client | None |
 
 ## Entry points
 
@@ -45,6 +64,10 @@ Project inputs:
 - the configured `state` file: generated and maintained by the backend, mapping canonical IDs to remote item/attachment keys, hashes, and errors. Preserve this file across runs; it is project state, never distributed with the skill.
 
 New canonical papers require metadata preparation before sync. Retrieve reliable metadata from primary publisher/DOI/arXiv sources or the verified paper; follow the target item type's Zotero schema. Never invent authors, dates, publication fields, or a preprint-to-journal relationship. Preserve established version distinctions and uncertainty. Do not substitute supplements for full papers.
+
+### Input handoff before preview
+
+If the project has no prepared inputs, identify who maintains its authoritative paper list and metadata rather than treating synchronization as a discovery or PDF-acquisition request. For each source-verified paper, record a stable manifest `id`, its `canonical_id` (self for a canonical record; aliases point to an existing canonical ID), and any verified `reference_urls`. Prepare one metadata `records` entry per canonical ID with a verified Zotero `data.itemType` and `data.title` plus type-appropriate editable fields; check its item type against Zotero's schema before attempting a real sync. A PDF is optional: add `local_path` relative to `pdf_root` and the file's SHA-256 only when a verified local PDF exists; otherwise keep a metadata-only record. Do not download papers, infer uncertain bibliographic fields, or expand the corpus merely to satisfy this handoff. Validate identity and exact canonical metadata coverage in the existing manifest, then use the read-only preview below; if a required input is missing, report the responsible preparation step and stop rather than generating plausible records.
 
 ## Credentials and permission boundary
 
@@ -103,6 +126,39 @@ No MCP server is required for synchronization; the bundled backend talks directl
 Run `python3 scripts/test_sync.py` with paths resolved relative to this skill directory. Tests use temporary fixtures, fake credentials and a mocked client; they do not access Zotero. They cover path confinement, duplicate IDs, aliases, checksum snapshots, state-path collisions, conservative matching, lock contention, preview non-mutation, metadata-only repeat-sync idempotence, and redirect refusal.
 
 The local installation has not been live-tested for attachment uploads, account permissions, quota errors, conflict recovery, or comprehensive Zotero schema validation. First real sync requires the verification steps above. HTTP redirects are refused by the backend, including storage uploads; report such a failure rather than weakening credential protection automatically. Standalone read-only download verification may follow signed storage redirects without carrying the API key.
+
+## Examples
+
+Preview planned synchronization without modifying remote collection or local state:
+```bash
+python3 scripts/sync-zotero.py --config /path/to/project/zotero-sync.config.json --dry-run
+```
+
+Execute authorized synchronization:
+```bash
+python3 scripts/sync-zotero.py --config /path/to/project/zotero-sync.config.json
+```
+
+Run test suite under Python 3.13:
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3.13 scripts/test_sync.py
+```
+
+## Limitations
+
+- Personal libraries only: Group library synchronization is intentionally unsupported.
+- POSIX file locking required: Requires POSIX-compliant flock support for lockfile isolation.
+- No desktop API integration: Connects exclusively to the Zotero Web API over HTTPS; local Zotero desktop app is not modified directly.
+- Strict input verification: Manifest IDs, SHA-256 hashes, and metadata mappings must align before synchronization proceeds.
+
+## Troubleshooting
+
+| Error | Cause | Solution |
+|---|---|---|
+| `Lock contention / LockError` | Another sync or preview process is currently active or a stale lock remains | Verify no background sync is running; inspect lock file |
+| `Local PDF differs from verified manifest` | PDF file bytes do not match the expected SHA-256 hash in manifest | Re-verify PDF acquisition or update manifest with verified hash |
+| `Configuration error / Missing key` | The JSON config file is missing one of the 8 required keys | Verify all 8 required string fields exist in config file |
+| `API Authentication / 403 Forbidden` | API key lacks permission or user ID is incorrect | Verify personal-library read/write, note, and file permissions on zotero.org |
 
 ## Official references
 

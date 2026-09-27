@@ -11,7 +11,8 @@ const emit="console.log(JSON.stringify({type:'message_end',message:{role:'assist
 test('depth validation',()=>{assert.equal(depthFrom({}),0);assert.equal(depthFrom({PI_LITERATURE_DEPTH:'2'}),2);for(const n of ['-1','3','abc','1.5'])assert.throws(()=>depthFrom({PI_LITERATURE_DEPTH:n}));});
 test('explicit role configuration and leaf tools',()=>{
  const root=temp();for(const n of ['research-ideas','pdf-read']){const d=n==='research-ideas'?path.join(root,'roles','literature-reviewer','skills',n):path.join(root,'skills',n);fs.mkdirSync(d,{recursive:true});fs.writeFileSync(path.join(d,'SKILL.md'),'fixture');}
- for(const depth of [1,2]) {const args=buildArgs({cli:'pi.js',extension:'index.ts',agentDir:root,promptFile:'role.md',model:'provider/model',depth});assert(args.includes('--no-extensions'));assert(args.includes('--no-skills'));assert(args.includes('--no-context-files'));assert.equal(args.filter(x=>x==='--skill').length,2);assert.equal(args[args.indexOf('--tools')+1].includes('literature_review'),depth===1);assert(!args.join(' ').includes('zotero'));}
+ for(const file of ['@rahularya01/pi-cursor/dist/index.js','pi-antigravity/src/index.ts']) {const target=path.join(root,'npm','node_modules',file);fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,'fixture');}
+ for(const depth of [1,2]) {const args=buildArgs({cli:'pi.js',extension:'index.ts',agentDir:root,promptFile:'role.md',model:'provider/model',depth});assert(args.includes('--no-extensions'));assert(args.includes('--no-skills'));assert(args.includes('--no-context-files'));assert.equal(args.filter(x=>x==='--skill').length,2);assert.equal(args[args.indexOf('--tools')+1].includes('literature_review'),depth===1);assert(!args.join(' ').includes('zotero'));assert(!args.join(' ').includes('pi-cursor'));assert(args.some(x=>x.endsWith('pi-antigravity/src/index.ts')));}
  fs.rmSync(root,{recursive:true});
 });
 test('coordinator stays Astra/xhigh and leaves use Sol/medium',t=>{
@@ -33,6 +34,7 @@ test('coordinator stays Astra/xhigh and leaves use Sol/medium',t=>{
  }
  assert.throws(()=>buildArgs({cli:'pi.js',agentDir:root,model:'openai-codex/gpt-6-sol',thinking:'medium',depth:3}),/Delegation depth exceeded/);
  assert.match(source,/leaf retrieval reviewers use Sol medium/);
+ assert.doesNotMatch(source,/gpt-5\.6-sol/);
  for(const file of ['README.md','literature-reviewer.md']) {
   const text=fs.readFileSync(new URL(file,import.meta.url),'utf8');
   assert.match(text,/Sol\/medium/);assert.doesNotMatch(text,/Luna|gpt-5\.6-luna/);

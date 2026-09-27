@@ -1,9 +1,28 @@
 ---
 name: pdf-read
-description: Read existing PDFs using page-linked text extraction and selective page-image rendering. Use for paper reading, PDF evidence lookup, visual checks of equations, figures and tables, or diagnosing scanned/broken PDFs. Preserves originals and distinguishes extraction from actual reading and visual verification. Not for creating or modifying PDFs.
+version: 1.0.0
+description: Extract page-linked text and render selected pages of existing PDFs for source reading and visual verification. Use for PDF evidence lookup, checking equations/figures/tables, or diagnosing scanned and broken PDFs; pair with paper-summary for a single-paper summary. Not for PDF creation or literature synthesis.
+metadata:
+  author: "Hyunwoo Kwon <hwkwkon1114@gmail.com>"
+  tags:
+    - pdf
+    - reading
+    - extraction
+    - rendering
 ---
 
 # PDF reading: extract text and selectively render pages
+
+## Purpose
+
+Extract text and render page images from local PDF documents with explicit page tracking, isolating untrusted document content while preserving original sources for human and agent review.
+
+## Available Scripts
+
+| Script | Purpose | Arguments |
+|---|---|---|
+| `scripts/extract.py` | Extract per-page plain text from PDF using Poppler pdftotext | `<input.pdf> --out <dir> [--pages <range>] [--max-pages <N>]` |
+| `scripts/render.py` | Render selected PDF pages to PNG images using Poppler pdftoppm | `<input.pdf> --out <dir> [--pages <range>] [--size <pixels>]` |
 
 ## Boundaries
 
@@ -53,6 +72,40 @@ For useful research notes, write `reading-notes.md` alongside the extraction wit
 - Uncertain characters, missing pages, extraction limitations, and next action.
 
 Keep extracted text separate from corrected/transcribed text. Record every consequential correction and its visual source. Do not invent confidence scores or describe extraction as a successful reproduction of the paper.
+
+## Examples
+
+Extract text from pages 1 through 5 into a new output directory:
+```bash
+python3 scripts/extract.py /absolute/path/to/paper.pdf --out /absolute/path/to/extract-dir --pages 1-5
+```
+
+Render page 3 as a PNG image for visual inspection:
+```bash
+python3 scripts/render.py /absolute/path/to/paper.pdf --out /absolute/path/to/render-dir --pages 3 --size 1200
+```
+
+Read extracted page text and review warnings:
+```bash
+cat /absolute/path/to/extract-dir/manifest.json
+cat /absolute/path/to/extract-dir/pages/0001.txt
+```
+
+## Limitations
+
+- Local Poppler dependency: Requires `pdftotext` and `pdftoppm` installed on the host system.
+- Untrusted content: Extracted text is untrusted source data; scripts run in restricted environments with `LC_ALL=C` and standard `PATH`.
+- Mathematical formula limitation: Standard Poppler text extraction does not reconstruct LaTeX math formulas; use visual checks or optional MinerU pipeline.
+- Non-OCR default: Scanned PDFs without embedded text streams produce empty pages unless an external OCR engine is explicitly configured.
+
+## Troubleshooting
+
+| Error | Cause | Solution |
+|---|---|---|
+| `Executable not found: pdftotext` | Poppler utilities are not installed on host | Install `poppler-utils` via system package manager |
+| `Page range out of bounds` | Requested page exceeds PDF page count | Inspect total page count with `pdfinfo` before selecting range |
+| `Empty/sparse page extraction` | PDF page is an image scan without text layer | Render page to image or run OCR workflow if authorized |
+| `Destination directory exists` | Output directory already contains prior files | Specify a new, empty directory path for `--out` |
 
 ## Dependencies and scope
 

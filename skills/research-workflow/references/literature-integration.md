@@ -14,6 +14,8 @@ Respect project-specific proposal-only/catalog-write restrictions: when integrat
 
 ## Integrate and verify
 
+First verify that the delegation returned a usable report or recoverable artifact and inspect it. An empty response has unknown outcome, not verified completion: report the blocker, use supported status/artifact recovery if available, and do not silently substitute an in-main review or launch duplicate work. Keep the review partial until its evidence is recovered and integrated.
+
 - Reconcile the handoff with existing evidence; distinguish source statements, inferences, proposals and reused checks. Preserve disagreements and access limits.
 - Verify affected IDs/counts, duplicate works, citations and links; refresh dependent catalog/narrative/bibliography views through the existing workflow.
 - Check rendered navigation when a rendered site is affected. Record unperformed rendering or integration as partial; do not claim a successful child or tool call completes scientific verification.

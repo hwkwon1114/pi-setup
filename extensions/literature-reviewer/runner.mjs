@@ -20,12 +20,9 @@ export function buildArgs({ cli, extension, agentDir, promptFile, model, thinkin
     '--no-context-files','--no-prompt-templates','--no-themes','--no-approve',
     '--tools',tools.join(','),'--model',model,'--append-system-prompt',promptFile,'-e',extension];
   if (thinking) args.push('--thinking',thinking);
-  // Native providers are explicitly loaded without discovering unrelated extensions.
-  const modules = path.join(agentDir,'npm','node_modules');
-  for (const file of ['@rahularya01/pi-cursor/dist/index.js','pi-antigravity/src/index.ts']) {
-    const target = path.join(modules,file);
-    if (fs.existsSync(target)) args.push('-e',target);
-  }
+  // Load the optional Antigravity provider without discovering unrelated extensions.
+  const antigravity = path.join(agentDir,'npm','node_modules','pi-antigravity/src/index.ts');
+  if (fs.existsSync(antigravity)) args.push('-e',antigravity);
   for (const skill of ['research-ideas','pdf-read']) {
     const target = skill === 'research-ideas'
       ? path.join(agentDir,'roles','literature-reviewer','skills',skill,'SKILL.md')

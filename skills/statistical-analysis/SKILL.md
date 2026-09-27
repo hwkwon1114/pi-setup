@@ -1,9 +1,16 @@
 ---
 name: statistical-analysis
+version: 1.0.0
 description: Plan and interpret statistical inference for research data and computational investigations. Use for estimands, paired or hierarchical method comparisons, assumption diagnostics, effect sizes and uncertainty, multiplicity, power, Bayesian checks, and ML/GP predictive evaluation. Separates exploratory patterns from confirmatory evidence; not a model-training launcher.
 license: MIT
 compatibility: Instruction-only. Use the project's existing statistical libraries and verify installed APIs; no mandatory package manager, dependency pins, or bundled executable tools.
 metadata:
+  author: "Hyunwoo Kwon <hwkwkon1114@gmail.com>"
+  tags:
+    - statistics
+    - inference
+    - hypothesis-testing
+    - uncertainty-quantification
   adaptation: Local Pi adaptation of K-Dense statistical-analysis
 ---
 
@@ -12,6 +19,10 @@ metadata:
 Start with the estimand and study design, not a test-name lookup. Produce an interpretable finding linked to evidence, including uncertainty and limits.
 
 Provenance: [ATTRIBUTION.md](ATTRIBUTION.md).
+
+## Purpose
+
+Plan and interpret statistical inference for experimental and computational investigations, establishing estimands, validating distributional assumptions, quantifying uncertainty, and controlling multiplicity.
 
 ## Integrate, do not duplicate
 
@@ -78,3 +89,35 @@ Sequential Bayesian inference is not a blanket exemption from design, selection,
 Report question/estimand, design and independent n, data snapshot, method/assumptions, estimates and interval definitions, test statistics/df and p-values when applicable, multiplicity, diagnostics, exclusions/failures, sensitivity, and limits. Never print p = 0; report suitable precision or a bound. Report fractional degrees of freedom when relevant.
 
 Separate observed results, model-conditional interpretation, and proposed next steps. Link selected notebook sections, analysis code/version, input/run IDs, transformations, actual environment, random seeds, outputs, and missing historical provenance. Use the project's reporting style, not mandatory APA formatting or a new dashboard. Record executed, unrun, and unavailable checks explicitly. Successful code execution is not statistical validation or causal identification.
+
+## Examples
+
+Decision example for a computational method comparison (not an executed analysis):
+```text
+Question: Which method has lower held-out error across evaluation datasets?
+Independent unit: dataset, if generalizing to new datasets.
+Matching: verify both methods were evaluated on the same datasets and conditions;
+          identical seed numbers alone do not establish pairing.
+Contrast: calculate within-dataset differences, retaining failures and heterogeneity.
+Uncertainty: choose a dataset-level or hierarchical method appropriate to the
+             independent unit count and target population; state its assumptions.
+Report: raw-scale effect, interval, observed units, missing pairs, test/selection
+        history and limits. Do not treat trajectory points or CV folds as independent.
+```
+
+For clustered data, resampling must draw independent clusters (or suitable blocks), preserving the whole within-cluster structure and any justified pairing; choose the interval method and number of replicates for the actual design rather than copying a generic bootstrap function.
+
+## Limitations
+
+- Observational and statistical scope: Statistical associations and interval estimates do not prove physical mechanisms or causal identification without explicit structural assumptions.
+- Small-sample limits: With few independent units or clusters, asymptotic and resampling approximations may be unreliable; assess design-specific assumptions and uncertainty rather than applying a universal sample-size cutoff.
+- Non-mechanistic tests: P-values quantify discrepancy under null assumptions; they do not quantify the probability that an alternate hypothesis or physical law is true.
+
+## Troubleshooting
+
+| Error / Challenge | Cause | Solution |
+|---|---|---|
+| `Multiplicity inflation / False discovery` | Multiple endpoints, seeds, or ablations evaluated without adjustment | Define primary estimand; apply Benjamini-Hochberg FDR or Holm-Bonferroni correction |
+| `Cluster dependence ignored` | Multiple trajectories from the same system treated as independent cases | Aggregate to cluster level or employ clustered bootstrap / hierarchical mixed models |
+| `P-value reported as zero` | Numerical rounding of extremely small floating-point values | Report as `p < 1e-16` or bounded interval rather than printing `p = 0` |
+| `Assumption violation on residuals` | Heteroscedasticity or extreme heavy tails | Apply robust standard errors (HC3), log-transformations, or non-parametric tests |

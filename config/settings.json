@@ -8,7 +8,6 @@
   },
   "packages": [
     "npm:@henryqw/pi-multi-codex@2.0.0",
-    "npm:@rahularya01/pi-cursor@latest",
     "npm:pi-antigravity@latest",
     {
       "source": "npm:pi-mcp-adapter@latest",
@@ -19,9 +18,8 @@
     }
   ],
   "enabledModels": [
-    "cursor/auto",
     "openai-codex/gpt-6-astra",
-    "openai-codex/gpt-5.6-sol",
+    "openai-codex/gpt-6-sol",
     "openai-codex/gpt-5.6-luna",
     "antigravity/gemini-3.8-flash",
     "openai-codex/gpt-reserve"

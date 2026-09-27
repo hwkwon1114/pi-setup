@@ -8,6 +8,12 @@ Establish the current host, project, supported interpreter/environment, schedule
 
 Keep scientific settings separate from operational settings. Different hardware, precision, solver versions, seeds, parallel reduction order, or thread settings can change results; record material differences and validate numerical agreement before pooling runs. Identical source is not a guarantee of bitwise reproducibility.
 
+## Budget and finalization
+
+- Declare separate per-fit and aggregate CPU/wall ceilings, cumulative charges for prior work, and time reserved for checkpoint finalization and reporting. Reserve **both CPU and wall time** before assigning training allowances/deadlines; unused CPU does not extend an expired wall ceiling. Keep concrete amounts in the experiment plan.
+- Check coordinator control flow, not just reserve arithmetic: reaching the training allowance must stop launching fits and route to authorized finalization/reporting within the remaining total budget, including a partial-cohort report when needed. A loop break must not silently skip that phase. Reporting cannot authorize retries, missing fits or sealed-test access.
+- In runner regression tests, exercise normal completion, training-allowance exhaustion with reporting time left, and exhausted total budget or worker failure. Verify the intended reporting/failure path, preserved partial artifacts, no completed-cell replay, and no ceiling reset. If reporting cannot finish, retain its partial status and blocker. Documentation is not an executed runner test.
+
 ## Slurm / CPU cluster
 
 - Use the project's submission script and supported environment/module/Conda setup.

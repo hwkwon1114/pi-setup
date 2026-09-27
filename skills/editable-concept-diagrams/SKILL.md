@@ -1,12 +1,29 @@
 ---
 name: editable-concept-diagrams
+version: 1.0.0
 description: Create simple conceptual illustrations and research-vision diagrams through image generation followed by a native editable SVG rebuild. Use for pictorial schematics, slide concepts, and requests to match an existing illustration's style. Not for quantitative plots, scientific image analysis, or raster images merely wrapped in SVG.
 compatibility: Requires an available image-generation tool for concept exploration and an existing SVG renderer for visual verification. Install dependencies only after explicit approval.
+metadata:
+  author: "Hyunwoo Kwon <hwkwkon1114@gmail.com>"
+  tags:
+    - diagrams
+    - svg
+    - visualization
+    - concept-design
 ---
 
 # Editable concept diagrams
 
 Use generated images to explore composition, then rebuild the useful design with editable vector elements. The image is a visual draft, not evidence or an automatically editable source.
+
+## Purpose
+
+Design clean, editable vector conceptual illustrations and architecture diagrams for presentations and manuscripts by exploring compositions with image drafts and constructing clean, structured SVG assets.
+
+## Prerequisites
+
+- Access to an image-generation capability (e.g. `generate_image`) for exploratory concept layouts.
+- An SVG rendering utility (e.g., `resvg`, `inkscape`, or browser-based rendering) to generate PNG previews for visual inspection.
 
 ## 1. Establish meaning and style
 
@@ -44,3 +61,40 @@ Use generated images to explore composition, then rebuild the useful design with
 - Keep the generated original, editable SVG, rendered preview, and a short provenance note together or cross-reference their real paths. The note records the prompt, draft used, substantive changes, checks performed, and remaining limits; it stays outside the artwork.
 - Provide concise opening instructions appropriate to the environment; in a remote VS Code terminal offer a copyable `code /absolute/path/to/diagram.svg` command after checking the file exists.
 - Describe the output as a native SVG reconstruction, not exact automated vectorization. No extra installation, configuration changes, publication, or experiments are implied by this workflow.
+
+## Examples
+
+Drafting a concept illustration prompt:
+```text
+generate_image(prompt="Clean flat-vector scientific schematic of a digital twin pipeline: physical sensor on left, neural operator in center, parameter estimation feedback loop on right, generous whitespace, minimalist pastel palette")
+```
+
+Constructing structured SVG layout:
+```xml
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#333"/>
+    </marker>
+  </defs>
+  <g id="physical-system">
+    <rect x="50" y="150" width="180" height="100" rx="8" fill="#e8f4f8" stroke="#2b6cb0" stroke-width="2"/>
+    <text x="140" y="205" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold">Physical Sensor</text>
+  </g>
+</svg>
+```
+
+## Limitations
+
+- Vector reconstruction is manual/semi-automated semantic rebuild, not an automated bitmap-to-vector tracing pipeline.
+- Not suited for quantitative or empirical data plots; use `scientific-visualization` for data-driven plots.
+- External fonts and raster images are excluded to keep SVGs fully self-contained.
+
+## Troubleshooting
+
+| Error / Issue | Cause | Solution |
+|---|---|---|
+| `Label text clipped or overlapping` | Bounding box insufficient for rendered font metrics | Increase group padding or adjust `font-size` / `viewBox` coordinates |
+| `SVG XML parse error` | Unclosed tags or unescaped characters in text elements | Validate well-formedness with XML parser before visual rendering |
+| `Image generation failure` | Tool or provider unavailable | Ask user if direct vector drafting without a raster draft is preferred |
+| `Missing local SVG renderer` | `resvg` or `inkscape` not installed on host | Provide copyable file path and request browser/VS Code visual review |

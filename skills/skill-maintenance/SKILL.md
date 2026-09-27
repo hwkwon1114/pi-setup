@@ -1,12 +1,24 @@
 ---
 name: skill-maintenance
+version: 1.0.0
 description: Create, audit, test, and improve agent skills from explicit user requests or observed workflow failures. Use when asked to build a skill, review skill quality, maintain a skill library, or turn corrections into proposed skill improvements. Not an always-on observer or automatic installer.
 license: CC-BY-4.0
+metadata:
+  author: "Hyunwoo Kwon <hwkwkon1114@gmail.com>"
+  tags:
+    - agent-skills
+    - skill-maintenance
+    - staging
+    - evaluation
 ---
 
 # Skill maintenance
 
 An explicit-invocation workflow for evidence-backed skill creation and improvement in Pi. Adapted from concepts in Eoghan Henn / rebelytics.com's Task Observer, with substantial simplification and Pi-specific changes. See `ATTRIBUTION.md` and `LICENSE.txt`. No upstream endorsement is implied.
+
+## Purpose
+
+Maintain, audit, and systematically improve agent skills through disciplined staging, baseline verification, regression testing, and explicit user authorization, preventing unvetted modifications to active skill sets.
 
 ## Boundaries
 
@@ -50,3 +62,33 @@ An explicit-invocation workflow for evidence-backed skill creation and improveme
 - Is each changed skill's state accurately named: proposed, staged, installed, or activation verified?
 
 State lives outside skill discovery directories, by default `~/.pi/agent/skill-maintenance/`. Skill instructions live under `~/.pi/agent/skills/skill-maintenance/`; these are different directories. Create only the state needed for the requested operation. No scheduler, hook, empty checkpoint writes, automatic archival, or self-modification is installed by this skill.
+
+## Examples
+
+Audit and stage example (procedure, not an executable recipe):
+```text
+1. Identify the authoritative source, live discovery path and manager; inspect symlinks.
+2. Record the complete relative-path/hash inventory of a fresh live baseline.
+3. Copy the bundle to a unique directory outside skill discovery, excluding caches.
+4. Make a targeted staged edit and test success, boundary and failure cases.
+5. Before any authorized installation, compare the live tree to the saved baseline;
+   stop on drift, preserve a separate backup and apply only approved files.
+6. Compare installed content byte-for-byte with the staged files and report
+   activation separately from installation.
+```
+
+Follow `references/review-and-change.md` for the full staging and verification contract; this example does not replace it.
+
+## Limitations
+
+- Staging required: Never performs in-place live modifications without staging and explicit user confirmation.
+- Policy enforcement limit: Skill instructions guide LLM behavior; they cannot enforce hard kernel-level sandbox constraints without extensions or OS permissions.
+- Local repository scope: Operates strictly on designated skill collections and local checkouts.
+
+## Troubleshooting
+
+| Issue / Alert | Cause | Solution |
+|---|---|---|
+| `Baseline drift detected` | Live skill file modified concurrently after staging snapshot | Re-stage from fresh baseline; do not overwrite unexpected live changes |
+| `Syntax / YAML validation failure` | Frontmatter missing required delimiter or contains malformed YAML | Parse frontmatter with `yaml.safe_load()` to identify exact syntax error |
+| `Permission denial` | Target directory lacks write permissions | Verify directory ownership; ask user for authorization rather than bypassing |

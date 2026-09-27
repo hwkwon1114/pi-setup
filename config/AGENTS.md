@@ -8,6 +8,7 @@ In Pi within VS Code's remote terminal, offer copyable `code /absolute/path` com
 
 ## Experiments
 
+- For convergence-oriented training, propose generous hour-scale safety ceilings with early stopping rather than repeated minute-scale fit allocations. Within an explicitly approved scope and budget, carry out its planned gates, fits and reporting without repeated small-budget approvals. Keep hard resource limits; put exact ceilings in the experiment plan, not these shared defaults.
 - Before comparative training, use `research-workflow` for the training checklist. Check provenance, scaling, optimization, regularization and finite losses/gradients for every comparator; equal caps do not establish fairness.
 - Default to group/trajectory-safe validation, predeclared selection/stopping rules and best-checkpoint restoration. Count validation in acquisition budgets; resolve no-extra-data conflicts before fitting and label approved fixed-budget exceptions. Never tune on tests.
 - Preserve curves and selected/final checkpoints; assess overfitting and convergence. Cap-limited results are fixed-recipe evidence, not best achievable performance.

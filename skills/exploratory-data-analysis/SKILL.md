@@ -1,9 +1,16 @@
 ---
 name: exploratory-data-analysis
+version: 1.0.0
 description: Explore research datasets and computational run records before modeling or inference. Use for schema and provenance checks, missingness, distributions, outlier sensitivity, dependence, leakage, and ML/GP fit diagnostics. Produces evidence-linked exploratory findings, not automatic data cleaning or confirmatory claims.
 license: MIT
 compatibility: Instruction-only. Use the current project's environment and validated readers; no bundled executable tools or mandatory dependencies.
 metadata:
+  author: "Hyunwoo Kwon <hwkwkon1114@gmail.com>"
+  tags:
+    - data-analysis
+    - eda
+    - statistics
+    - research
   adaptation: Local Pi adaptation of K-Dense exploratory-data-analysis
 ---
 
@@ -12,6 +19,10 @@ metadata:
 Understand what the data can support before choosing an analysis. EDA is an investigation or a step within one, not an automatic modeling pipeline.
 
 Provenance: [ATTRIBUTION.md](ATTRIBUTION.md).
+
+## Purpose
+
+Perform principled exploratory analysis on experimental data, tabular schemas, and computational runs, detecting anomalies, data leakage, and distributional shifts while protecting test splits from contamination.
 
 ## Fit the existing research workflow
 
@@ -64,3 +75,37 @@ Use the existing investigation note or notebook. Include only relevant fields:
 - **Reproducibility:** source paths/IDs in the appropriate private record, code revision, actual environment, commands, seeds, selection rules, metric definitions, and output locations. Unknown historical provenance stays unknown.
 
 Use scientific-visualization for concise labels, stable semantic filenames, captions, and interval definitions. Separate executed checks from proposals, and successful artifact creation from scientific validation.
+
+## Examples
+
+Safe tabular schema and missingness inspection:
+```python
+import pandas as pd
+# Inspect schema and missingness on an existing project dataset
+print("Shape:", df.shape)
+print("Missing rates:\n", df.isna().mean()[lambda x: x > 0])
+print("Duplicate key check:", df["run_id"].duplicated().sum())
+```
+
+Bounded distribution and outlier sensitivity check:
+```python
+import numpy as np
+residuals = df["observed"] - df["predicted"]
+quantiles = np.nanpercentile(residuals, [1, 5, 25, 50, 75, 95, 99])
+print("Residual quantiles [1%, 5%, 25%, 50%, 75%, 95%, 99%]:\n", quantiles)
+```
+
+## Limitations
+
+- Exploratory and diagnostic only: EDA diagnoses properties of the data; it does not constitute confirmatory statistical inference or causal proof.
+- Preserves raw records: Requires explicit domain justification before excluding outliers or imputing missing entries; silent data alteration is prohibited.
+- Does not deserialize untrusted artifacts: Serialized binary formats (e.g. pickle) must not be loaded without prior inspection.
+
+## Troubleshooting
+
+| Issue / Anomaly | Cause | Solution |
+|---|---|---|
+| `Key uniqueness failure` | Join keys contain duplicates or multiple runs share an ID | Identify hierarchy/replicates before joining; do not drop rows blindly |
+| `Apparent data leakage` | Feature incorporates information from future timesteps or test split | Audit preprocessing pipeline and fit all transformers strictly within CV splits |
+| `Extreme distributional skew` | Heavy-tailed phenomena or unhandled sensor saturation / clipping | Check physical instrument limits; report robust medians/IQRs alongside means |
+| `Format deserialization refusal` | File format requires untrusted binary loader (e.g. pickle) | Require safe formats (Parquet, CSV, HDF5, SafeTensors) or verify origin |

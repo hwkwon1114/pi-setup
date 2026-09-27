@@ -273,7 +273,7 @@ def prepare_inputs(config):
         if b'%PDF-' not in data[:1024] or hashlib.sha256(data).hexdigest() != sha.lower():
             raise RuntimeError('Local PDF differs from verified manifest: ' + row['id'])
         # Upload precisely the validated bytes even if a local file changes later.
-        pdfs[row['id']] = {'path': path, 'data': data, 'md5': hashlib.md5(data).hexdigest(),
+        pdfs[row['id']] = {'path': path, 'data': data, 'md5': hashlib.md5(data, usedforsecurity=False).hexdigest(),
                           'mtime': int(path.stat().st_mtime * 1000)}
     return records, metadata, state, pdfs
 
