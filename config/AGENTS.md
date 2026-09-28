@@ -18,10 +18,6 @@ In Pi within VS Code's remote terminal, offer copyable `code /absolute/path` com
 
 Lead with full held-out aggregates and error distributions, respecting dependence. Use matched, error-independently selected examples; disclose selection and omissions. Best/worst cases are labeled diagnostics, not representative comparisons. Use `scientific-visualization` for the detailed procedure.
 
-## Model routing
-
-Use the Sol default for routine work; use Luna for paper triage. For high-stakes numerical, experimental-design or manuscript questions—or a bug still stuck after two distinct attempts—request a bounded Astra `oracle` or `reviewer` subagent. The parent cannot switch its own model; ask the user to use `/model` if needed. Other enabled models are selectable, not automatic fallbacks.
-
 ## Literature
 
 - Delegate reviews, updates, gaps and direction comparisons through `literature_review`; announce delegation and pass bounded scope, constraints, existing evidence and absolute paths. Configuration, isolated-paper explanations and saved-material reorganization may stay in-main; respect explicit no-subagent requests. Do not duplicate reviews or bypass dispatch caps.
