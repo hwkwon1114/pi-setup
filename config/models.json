@@ -2,8 +2,8 @@
   "providers": {
     "openai-codex": {
       "modelOverrides": {
-        "gpt-6-sol": { "contextWindow": 150000 },
-        "gpt-6-astra": { "contextWindow": 150000 }
+        "gpt-6-sol": { "contextWindow": 150000, "maxTokens": 32000 },
+        "gpt-6-astra": { "contextWindow": 150000, "maxTokens": 32000 }
       },
       "models": [
         {
@@ -13,8 +13,9 @@
           "reasoning": true,
           "input": ["text", "image"],
           "contextWindow": 100000,
-          "maxTokens": 100000,
+          "maxTokens": 24000,
           "thinkingLevelMap": {
+            "medium": "medium",
             "xhigh": "xhigh",
             "max": "max",
             "minimal": "low"
@@ -27,6 +28,18 @@
           }
         }
       ]
+    },
+    "openai-codex-2": {
+      "modelOverrides": {
+        "gpt-6-sol": { "contextWindow": 150000, "maxTokens": 32000 },
+        "gpt-6-astra": { "contextWindow": 150000, "maxTokens": 32000 },
+        "gpt-6-luna": { "contextWindow": 100000, "maxTokens": 24000 }
+      }
+    },
+    "antigravity": {
+      "modelOverrides": {
+        "gemini-3.8-flash": { "contextWindow": 150000, "maxTokens": 32000 }
+      }
     }
   }
 }

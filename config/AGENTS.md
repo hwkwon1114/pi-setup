@@ -20,9 +20,7 @@ Lead with full held-out aggregates and error distributions, respecting dependenc
 
 ## Model routing
 
-- **Sol (default):** implementation, refactors, plotting, routine debugging and data analysis.
-- **Astra:** novel numerical methods, debugging still stuck after two Sol attempts, experimental design, manuscript claims, or other work where an error could waste substantial compute. Escalate by asking the user to switch with `/model`; the agent cannot switch its own model mid-session. If `pi-subagents` is installed, an explicitly bounded Astra oracle/reviewer is an alternative.
-- **Luna:** paper summarization, parameter extraction and first-pass literature triage.
+Use the Sol default for routine work; use Luna for paper triage. For high-stakes numerical, experimental-design or manuscript questions—or a bug still stuck after two distinct attempts—request a bounded Astra `oracle` or `reviewer` subagent. The parent cannot switch its own model; ask the user to use `/model` if needed. Other enabled models are selectable, not automatic fallbacks.
 
 ## Literature
 
