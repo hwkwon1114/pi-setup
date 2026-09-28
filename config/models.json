@@ -3,13 +3,13 @@
     "openai-codex": {
       "models": [
         {
-          "id": "gpt-reserve",
-          "name": "GPT Reserve (Luna)",
+          "id": "gpt-6-luna",
+          "name": "GPT-6 Luna",
           "api": "openai-codex-responses",
           "reasoning": true,
           "input": ["text", "image"],
-          "contextWindow": 272000,
-          "maxTokens": 128000,
+          "contextWindow": 100000,
+          "maxTokens": 100000,
           "thinkingLevelMap": {
             "xhigh": "xhigh",
             "max": "max",

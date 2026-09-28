@@ -48,7 +48,7 @@ Apply only what the task needs; a small coding change does not require a site or
 - Quarto configuration, rendering or navigation: [Quarto](references/quarto.md).
 - Plots and figure review: use `scientific-visualization`; PDF inspection: use `pdf-read`.
 
-Literature discovery follows the host's reviewer routing, not this skill. Reorganizing saved reviews needs no new search: inspect the relevant material completely, preserve access labels, distinguish inherited claims from new checks, and version/hash copied material so teaching content does not silently drift.
+For literature tasks, use Luna for first-pass triage, Sol for synthesis, and Astra for evidence disputes, following the host's escalation policy. Literature discovery follows the host's reviewer routing, not this skill. Reorganizing saved reviews needs no new search: inspect the relevant material completely, preserve access labels, distinguish inherited claims from new checks, and version/hash copied material so teaching content does not silently drift.
 
 ## Implement and report minimally
 

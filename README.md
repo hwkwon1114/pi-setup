@@ -88,11 +88,11 @@ instructions belong on that machine, not in shared configuration.
 
 ## Multiple Codex accounts (same session)
 
-The settings template includes `@henryqw/pi-multi-codex@2.0.0`.
+The settings template includes `@henryqw/pi-multi-codex@2.0.3`.
 For an existing installation, run this in a regular terminal, outside Pi:
 
 ```bash
-pi install npm:@henryqw/pi-multi-codex@2.0.0
+pi install npm:@henryqw/pi-multi-codex@2.0.3
 ```
 
 This is also required after a resources-only update: pulling this repository does

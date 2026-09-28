@@ -1,13 +1,14 @@
 {
   "theme": "light",
   "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-6-astra",
+  "defaultModel": "gpt-6-sol",
   "defaultThinkingLevel": "medium",
   "warnings": {
     "anthropicExtraUsage": false
   },
   "packages": [
-    "npm:@henryqw/pi-multi-codex@2.0.0",
+    "npm:@henryqw/pi-multi-codex@2.0.3",
+    "npm:pi-subagents@0.73.1",
     "npm:pi-antigravity@latest",
     {
       "source": "npm:pi-mcp-adapter@latest",
@@ -20,8 +21,17 @@
   "enabledModels": [
     "openai-codex/gpt-6-astra",
     "openai-codex/gpt-6-sol",
-    "openai-codex/gpt-5.6-luna",
-    "antigravity/gemini-3.8-flash",
-    "openai-codex/gpt-reserve"
-  ]
+    "openai-codex/gpt-6-luna",
+    "antigravity/gemini-3.8-flash"
+  ],
+  "subagents": {
+    "agentOverrides": {
+      "worker": { "model": "openai-codex/gpt-6-sol" },
+      "scout": { "model": "openai-codex/gpt-6-sol" },
+      "researcher": { "model": "openai-codex/gpt-6-sol" },
+      "reviewer": { "model": "openai-codex/gpt-6-astra" },
+      "oracle": { "model": "openai-codex/gpt-6-astra" },
+      "evidence-auditor": { "model": "openai-codex/gpt-6-astra" }
+    }
+  }
 }
