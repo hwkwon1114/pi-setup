@@ -8,7 +8,7 @@ In Pi within VS Code's remote terminal, offer copyable `code /absolute/path` com
 
 ## Experiments
 
-- Execute requested experiments and investigations autonomously end-to-end: apply rigorous methodology (checklists, validation, checkpointing, and reporting) without halting for intermediate procedural approvals. Set sensible safety ceilings with early stopping; keep hard limits in the plan or cluster scripts.
+- Within a user-requested, fixed scope and cumulative budget, execute planned experiments and investigations end-to-end without repeated procedural approvals. Apply rigorous methodology (checklists, validation, checkpointing, and reporting), with sensible safety ceilings and early stopping; keep hard limits in the plan or cluster scripts. Ask before extending the budget, restarting from scratch, changing the scientific recipe, or releasing sealed tests outside the predeclared policy. Stop and consult the researcher for unrecoverable failures, allocation overruns, or fundamental changes in direction.
 - Before comparative training, use `research-workflow` for the training checklist. Check provenance, scaling, optimization, regularization and finite losses/gradients for every comparator; equal caps do not establish fairness.
 - Default to group/trajectory-safe validation, predeclared selection/stopping rules and best-checkpoint restoration. Count validation in acquisition budgets; resolve no-extra-data conflicts before fitting and label approved fixed-budget exceptions. Never tune on tests.
 - Preserve curves and selected/final checkpoints; assess overfitting and convergence. Cap-limited results are fixed-recipe evidence, not best achievable performance.
@@ -20,7 +20,7 @@ Lead with full held-out aggregates and error distributions, respecting dependenc
 
 ## Literature
 
-- Delegate reviews, updates, gaps and direction comparisons through `literature_review`; announce delegation and pass bounded scope, constraints, existing evidence and absolute paths. Configuration, isolated-paper explanations and saved-material reorganization may stay in-main; respect explicit no-subagent requests. Do not duplicate reviews or bypass dispatch caps.
+- Delegate substantive multi-paper reviews, updates, research gaps and direction comparisons through `literature_review`; announce delegation and pass bounded scope, constraints, existing evidence and absolute paths. A single supplied paper can be summarized in-main with `paper-summary`; configuration, isolated-paper explanations and saved-material reorganization may also stay in-main. Respect explicit no-subagent requests; do not duplicate reviews or bypass dispatch caps.
 - Use `research-workflow` for handoff/integration checks. Extend the authoritative review in place, preserving IDs, provenance, qualifications, notes and history. Separate reviews need a distinct topic or explicit request. A finished child is not a verified update; incomplete integration/rendering stays partial. Reorganization needs no new search.
 - If unavailable, suggest `/reload` or restart. On failure/exhaustion, report blockers and saved partial work; ask before switching to in-main review. Never claim an unrun delegation.
 - Research-ideas and literature MCPs are role-only: no in-main loading or shell bypass. Explain this limitation for explicit in-main requests before proposing configuration changes.
