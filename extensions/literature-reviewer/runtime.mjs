@@ -59,7 +59,9 @@ export function registerBudgetHooks(pi, budget, clock = Date.now) {
     { role: 'custom', customType: 'literature-budget', content: budgetNotice(budget, clock()), display: false, timestamp: clock() },
   ] }));
   pi.on('tool_call', (event) => {
-    if (budget.finalizeAt !== null && clock() >= budget.finalizeAt && ['mcp', 'literature_review'].includes(event.toolName))
+    // Nested native MCP/resource calls also pass this hook when called via codemode.
+    const retrieval = ['mcp', 'literature_review', 'list_mcp_resources', 'list_mcp_resource_templates', 'read_mcp_resource'].includes(event.toolName) || event.toolName.startsWith('mcp__');
+    if (budget.finalizeAt !== null && clock() >= budget.finalizeAt && retrieval)
       return { block: true, reason: budgetNotice(budget, clock()) };
   });
 }

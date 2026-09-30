@@ -40,7 +40,7 @@ export function depthFrom(env) {
 export function buildArgs({ cli, extension, agentDir, promptFile, model, thinking, depth }) {
   if (!model) throw new Error('A selected model is required');
   if (!Number.isInteger(depth) || depth < 1 || depth > MAX_DEPTH) throw new Error('Delegation depth exceeded');
-  const tools = ['read','bash','write','edit','grep','find','ls','mcp','literature_progress'];
+  const tools = ['read','bash','write','edit','grep','find','ls','codemode','literature_progress'];
   if (depth < MAX_DEPTH) tools.push('literature_review');
   const args = [cli,'--mode','json','-p','--no-session','--no-extensions','--no-skills',
     '--no-context-files','--no-prompt-templates','--no-themes','--no-approve',

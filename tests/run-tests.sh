@@ -36,29 +36,28 @@ for p in list(root.glob('config/*.json'))+list(root.glob('optional/**/*.template
     try: json.load(open(p))
     except Exception as e: bad.append(f"invalid JSON {p}: {e}")
 try:
-    models=json.load(open(root/'config/models.json'))['providers']['openai-codex']
-    luna=next(m for m in models['models'] if m['id']=='gpt-6-luna')
-    if luna['maxTokens'] >= luna['contextWindow']: bad.append('Luna maxTokens must be below contextWindow')
-    if 'medium' not in luna['thinkingLevelMap']: bad.append('Luna must map default medium thinking level')
-    for provider in ('openai-codex','openai-codex-2'):
-        overrides=json.load(open(root/'config/models.json'))['providers'][provider]['modelOverrides']
-        for name in ('sol','astra'):
-            entry=overrides.get(f'gpt-6-{name}',{})
+    providers=json.load(open(root/'config/models.json'))['providers']
+    if any(p.startswith('openai-codex') for p in providers): bad.append('obsolete Codex provider configuration')
+    for provider in ('openai','openai-2'):
+        overrides=providers[provider]['modelOverrides']
+        for model in ('gpt-6.1-sol','gpt-6-astra'):
+            entry=overrides.get(model,{})
             if entry.get('contextWindow') != 150000 or entry.get('maxTokens') != 32000:
-                bad.append(f'{provider} {name} limits must be 150000/32000')
-        if provider == 'openai-codex-2':
-            luna=overrides.get('gpt-6-luna',{})
-            if luna.get('contextWindow') != 100000 or luna.get('maxTokens') != 24000:
-                bad.append('secondary-provider Luna limits must be 100000/24000')
+                bad.append(f'{provider} {model} limits must be 150000/32000')
+        luna=overrides.get('gpt-6-luna',{})
+        if luna.get('contextWindow') != 100000 or luna.get('maxTokens') != 24000:
+            bad.append(f'{provider} Luna limits must be 100000/24000')
     gemini=json.load(open(root/'config/models.json'))['providers']['antigravity']['modelOverrides'].get('gemini-3.8-flash',{})
     if gemini.get('contextWindow') != 150000 or gemini.get('maxTokens') != 32000:
         bad.append('Gemini Flash limits must be 150000/32000')
     settings=json.load(open(root/'config/settings.json'))
     enabled=set(settings.get('enabledModels',[]))
     roles=settings.get('subagents',{}).get('agentOverrides',{})
-    for role,model in {'worker':'openai-codex/gpt-6-sol','scout':'openai-codex/gpt-6-sol',
-                       'researcher':'openai-codex/gpt-6-sol','reviewer':'openai-codex/gpt-6-astra',
-                       'oracle':'openai-codex/gpt-6-astra','evidence-auditor':'openai-codex/gpt-6-astra'}.items():
+    for role,model in {'worker':'openai/gpt-6.1-sol','scout':'openai/gpt-6.1-sol',
+                       'researcher':'openai/gpt-6.1-sol','reviewer':'openai/gpt-6-astra',
+                       'oracle':'openai/gpt-6-astra','evidence-auditor':'openai/gpt-6-astra',
+                       'literature-coordinator':'openai/gpt-6-astra','literature-leaf':'openai/gpt-6.1-sol',
+                       'literature-reviewer':'openai/gpt-6-astra'}.items():
         if roles.get(role,{}).get('model') != model: bad.append(f'{role} model override mismatch')
         if model not in enabled: bad.append(f'{role} model is not enabled: {model}')
 except Exception as e: bad.append(f'model routing config invalid: {e}')

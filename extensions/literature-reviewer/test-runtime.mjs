@@ -62,7 +62,7 @@ test('budget context is ephemeral, refreshed and nonduplicating; finalization bl
   clock=budget.finalizeAt;
   const second=handlers.get('context')({messages:first.messages});
   assert.equal(second.messages.length,2);assert.match(second.messages[1].content,/FINALIZE NOW/);
-  for(const toolName of ['mcp','literature_review'])assert(handlers.get('tool_call')({toolName}).block);
+  for(const toolName of ['mcp','literature_review','mcp__consensus__search','mcp__researchfasttrack__get_paper','list_mcp_resources','list_mcp_resource_templates','read_mcp_resource'])assert(handlers.get('tool_call')({toolName}).block);
   for(const toolName of ['read','write','edit','bash'])assert.equal(handlers.get('tool_call')({toolName}),undefined);
   // Bash remains task-scoped by role instructions; this hook is not a network sandbox.
 });

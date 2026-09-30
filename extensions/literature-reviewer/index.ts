@@ -1,11 +1,12 @@
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
-import { getAgentDir, truncateHead } from '@earendil-works/pi-coding-agent';
+import { getAgentDir, truncateHead, createMcpExtension, createCodemodeExtension } from '@earendil-works/pi-coding-agent';
 import { Type } from 'typebox';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildArgs, depthFrom, runProcess, resolveRoleModel, MAX_DEPTH } from './runner.mjs';
 import { progressUpdate } from './progress.mjs';
+import { installChildMcp } from './native-mcp.mjs';
 import { budgetFrom, planBudget, budgetNotice, registerBudgetHooks, formatFailure } from './runtime.mjs';
 
 export default async function (pi: ExtensionAPI) {
@@ -26,21 +27,7 @@ export default async function (pi: ExtensionAPI) {
   }
   // Isolated in-memory MCP config: never import ambient/project servers into children.
   if (depth > 0) {
-    const adapterPath = path.join(agentDir,'npm/node_modules/pi-mcp-adapter/index.ts');
-    if (!fs.existsSync(adapterPath)) throw new Error('Literature reviewer needs the installed pi-mcp-adapter');
-    const { createMcpAdapter } = await import(adapterPath);
-    await createMcpAdapter({config:{
-      settings:{autoAuth:false,sampling:false,scriptMode:false,directTools:false},
-      mcpServers:{
-        consensus:{url:'https://mcp.consensus.app/mcp',auth:'oauth',oauth:{scope:'search'},lifecycle:'lazy',requestTimeoutMs:60000},
-        researchfasttrack:{url:'https://literature.researchfasttrack.com/mcp',lifecycle:'lazy',requestTimeoutMs:60000}
-      }
-    }})(pi);
-    // Headless children must hand auth back to the interactive parent.
-    pi.on('tool_call', async (event) => {
-      if (event.toolName==='mcp' && ['auth-start','auth-complete'].includes((event.input as any).action))
-        return {block:true,reason:'MCP authorization is disabled in headless reviewers. Return the blocker to the main conversation for an explicitly authorized adapter-enabled interactive reauthentication session; do not change configuration or credentials here.'};
-    });
+    await installChildMcp(pi, { createMcpExtension, createCodemodeExtension }, process.env.PI_LITERATURE_RUN_DIR);
   }
   if (depth >= MAX_DEPTH) return;
   let active=0, dispatched=0;
@@ -72,8 +59,8 @@ export default async function (pi: ExtensionAPI) {
       // retrieval workers use a lower-cost non-orchestrator model.
       const dispatchedDepth=depth+1;
       const model=dispatchedDepth===1
-        ? 'openai-codex/gpt-6-astra'
-        : 'openai-codex/gpt-6-sol';
+        ? 'openai/gpt-6-astra'
+        : 'openai/gpt-6.1-sol';
       const thinking=dispatchedDepth===1 ? 'xhigh' : 'medium';
       const effectiveRole = resolveRoleModel(agentDir, dispatchedDepth, model, thinking);
       const effectiveModel = effectiveRole.model;

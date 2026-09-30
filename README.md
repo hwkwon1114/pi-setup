@@ -78,7 +78,7 @@ instructions belong on that machine, not in shared configuration.
 | `config/AGENTS.md` | Global working preferences (training, figures, literature routing) |
 | `config/settings.json` | Theme, default model/provider, `packages`, `enabledModels` |
 | `config/models.json` | Custom model definitions (`openai-codex/gpt-reserve`) |
-| `config/mcp.json` | MCP servers: `consensus`, `researchfasttrack` (lazy, OAuth) |
+| `config/mcp.json` | Native MCP servers: `consensus`, `researchfasttrack` (codemode exposure; Consensus OAuth) |
 | `skills/` | exploratory-data-analysis, paper-summary, pdf-read, research-workflow, scientific-visualization, skill-maintenance, statistical-analysis, zotero-sync |
 | `agents/` | Subagent definitions (`literature-reviewer` bridge) |
 | `extensions/literature-reviewer/` | `literature_review` delegation tool (Approach B: hybrid subagent integration & FleetView) |
