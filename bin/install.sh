@@ -70,7 +70,7 @@ for f in AGENTS.md settings.json models.json mcp.json; do
 done
 
 # --- directory payloads --------------------------------------------------------
-for d in skills extensions roles; do
+for d in skills extensions roles agents; do
   [ -d "$REPO/$d" ] || continue
   if [ "$MODE" = link ] && [ -L "$DST/$d" ] && [ "$(readlink "$DST/$d")" = "$REPO/$d" ]; then
     say "= $d/ (already linked)"

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import {depthFrom,buildArgs,runProcess} from './runner.mjs';
+import {depthFrom,buildArgs,runProcess,resolveRoleModel} from './runner.mjs';
 import {formatFailure} from './runtime.mjs';
 import {progressUpdate} from './progress.mjs';
 const temp=()=>fs.mkdtempSync(path.join(os.tmpdir(),'lit-reviewer-test-'));
@@ -39,6 +39,65 @@ test('coordinator stays Astra/xhigh and leaves use Sol/medium',t=>{
   const text=fs.readFileSync(new URL(file,import.meta.url),'utf8');
   assert.match(text,/Sol\/medium/);assert.doesNotMatch(text,/Luna|gpt-5\.6-luna/);
  }
+});
+test('role model override dynamically resolves from settings.json or defaults', t => {
+ const root = temp();
+ t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+
+ const d1 = resolveRoleModel(root, 1, 'openai-codex/gpt-6-astra', 'xhigh');
+ assert.deepEqual(d1, { model: 'openai-codex/gpt-6-astra', thinking: 'xhigh' });
+
+ fs.writeFileSync(path.join(root, 'settings.json'), JSON.stringify({ defaultProvider: 'openai' }));
+ const d2 = resolveRoleModel(root, 1, 'openai-codex/gpt-6-astra', 'xhigh');
+ assert.deepEqual(d2, { model: 'openai/gpt-6-astra', thinking: 'xhigh' });
+ const d3 = resolveRoleModel(root, 2, 'openai-codex/gpt-6-sol', 'medium');
+ assert.deepEqual(d3, { model: 'openai/gpt-6.1-sol', thinking: 'medium' });
+
+ fs.writeFileSync(path.join(root, 'settings.json'), JSON.stringify({
+   subagents: {
+     agentOverrides: {
+       'literature-coordinator': { model: 'openai/gpt-7-preview', thinking: 'high' },
+       'literature-leaf': { model: 'openai/gpt-6.5-flash', thinking: 'low' }
+     }
+   }
+ }));
+ const d4 = resolveRoleModel(root, 1, 'openai-codex/gpt-6-astra', 'xhigh');
+ assert.deepEqual(d4, { model: 'openai/gpt-7-preview', thinking: 'high' });
+ const d5 = resolveRoleModel(root, 2, 'openai-codex/gpt-6-sol', 'medium');
+ assert.deepEqual(d5, { model: 'openai/gpt-6.5-flash', thinking: 'low' });
+
+ // Thinking-only override without model
+ fs.writeFileSync(path.join(root, 'settings.json'), JSON.stringify({
+   subagents: {
+     agentOverrides: {
+       'literature-coordinator': { thinking: 'medium' }
+     }
+   }
+ }));
+ const d6 = resolveRoleModel(root, 1, 'openai-codex/gpt-6-astra', 'xhigh');
+ assert.deepEqual(d6, { model: 'openai-codex/gpt-6-astra', thinking: 'medium' });
+});
+
+test('buildArgs loads multi-openai extension when model uses an alias provider', () => {
+  const root = temp();
+  try {
+    for (const n of ['research-ideas', 'pdf-read']) {
+      const d = n === 'research-ideas' ? path.join(root, 'roles', 'literature-reviewer', 'skills', n) : path.join(root, 'skills', n);
+      fs.mkdirSync(d, { recursive: true });
+      fs.writeFileSync(path.join(d, 'SKILL.md'), 'fixture');
+    }
+    const multiOpenAIPath = path.join(root, 'extensions', 'multi-openai', 'index.ts');
+    fs.mkdirSync(path.dirname(multiOpenAIPath), { recursive: true });
+    fs.writeFileSync(multiOpenAIPath, 'fixture');
+
+    const args1 = buildArgs({ cli: 'pi.js', extension: 'index.ts', agentDir: root, promptFile: 'role.md', model: 'openai-2/gpt-6-astra', depth: 1 });
+    assert.ok(args1.includes(multiOpenAIPath), 'multi-openai must be loaded for openai-2 model');
+
+    const args2 = buildArgs({ cli: 'pi.js', extension: 'index.ts', agentDir: root, promptFile: 'role.md', model: 'openai/gpt-6-astra', depth: 1 });
+    assert.ok(!args2.includes(multiOpenAIPath), 'multi-openai should not be explicitly added for native openai model');
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
 });
 test('successful child stores report',async()=>{const root=temp();const r=await runProcess({command:process.execPath,args:['-e',emit],cwd:root,env:process.env,task:'fixture',runDir:root,timeoutMs:2000});assert(r.ok);assert.equal(fs.readFileSync(r.report,'utf8'),'fixture report');fs.rmSync(root,{recursive:true});});
 test('nonzero child fails even with report',async()=>{const root=temp();const r=await runProcess({command:process.execPath,args:['-e',emit+'process.exitCode=1;'],cwd:root,env:process.env,task:'fixture',runDir:root,timeoutMs:2000});assert(!r.ok);fs.rmSync(root,{recursive:true});});

@@ -15,7 +15,7 @@ DRY=0
 
 run() { if [ "$DRY" = 1 ]; then printf '  would: %s\n' "$*"; else "$@"; fi; }
 
-for d in skills extensions roles; do
+for d in skills extensions roles agents; do
   [ -d "$SRC/$d" ] || continue
   # skip if the live dir is a symlink back into this repo (--link install)
   if [ -L "$SRC/$d" ] && [ "$(readlink "$SRC/$d")" = "$REPO/$d" ]; then

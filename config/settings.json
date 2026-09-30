@@ -1,13 +1,12 @@
 {
   "theme": "light",
-  "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-6-sol",
+  "defaultProvider": "openai",
+  "defaultModel": "gpt-6.1-sol",
   "defaultThinkingLevel": "medium",
   "warnings": {
     "anthropicExtraUsage": false
   },
   "packages": [
-    "npm:@henryqw/pi-multi-codex@2.0.3",
     "npm:pi-subagents@0.73.1",
     "npm:pi-antigravity@latest",
     {
@@ -22,16 +21,69 @@
     "openai-codex/gpt-6-astra",
     "openai-codex/gpt-6-sol",
     "openai-codex/gpt-6-luna",
+    "openai/gpt-6.1-sol",
+    "openai/gpt-6-astra",
+    "openai/gpt-6-luna",
+    "openai-2/gpt-6.1-sol",
+    "openai-2/gpt-6-astra",
+    "openai-2/gpt-6-luna",
     "antigravity/gemini-3.8-flash"
   ],
   "subagents": {
     "agentOverrides": {
-      "worker": { "model": "openai-codex/gpt-6-sol" },
-      "scout": { "model": "openai-codex/gpt-6-sol" },
-      "researcher": { "model": "openai-codex/gpt-6-sol" },
-      "reviewer": { "model": "openai-codex/gpt-6-astra" },
-      "oracle": { "model": "openai-codex/gpt-6-astra" },
-      "evidence-auditor": { "model": "openai-codex/gpt-6-astra" }
+      "worker": {
+        "model": "openai-codex/gpt-6-sol"
+      },
+      "scout": {
+        "model": "openai-codex/gpt-6-sol"
+      },
+      "researcher": {
+        "model": "openai-codex/gpt-6-sol"
+      },
+      "reviewer": {
+        "model": "openai-codex/gpt-6-astra"
+      },
+      "oracle": {
+        "model": "openai-codex/gpt-6-astra"
+      },
+      "evidence-auditor": {
+        "model": "openai-codex/gpt-6-astra",
+        "disabled": true
+      },
+      "claude-code": {
+        "disabled": true
+      },
+      "claude-code-writer": {
+        "disabled": true
+      },
+      "codex-exec": {
+        "disabled": true
+      },
+      "codex-exec-writer": {
+        "disabled": true
+      },
+      "cursor-agent": {
+        "disabled": true
+      },
+      "cursor-agent-writer": {
+        "disabled": true
+      },
+      "delegate": {
+        "disabled": true
+      },
+      "literature-coordinator": {
+        "model": "openai-codex/gpt-6-astra",
+        "thinking": "xhigh"
+      },
+      "literature-leaf": {
+        "model": "openai-codex/gpt-6-sol",
+        "thinking": "medium"
+      },
+      "literature-reviewer": {
+        "model": "openai-codex/gpt-6-astra",
+        "thinking": "xhigh"
+      }
     }
-  }
+  },
+  "deviceId": "32e61c94-ebdb-40e5-9730-f0e884facd1d"
 }

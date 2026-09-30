@@ -6,6 +6,32 @@ import { REVIEW_TIMEOUT_MS, collectArtifacts, readBoundedText } from './runtime.
 import { createProgress } from './progress.mjs';
 
 export const MAX_DEPTH = 2;
+export function resolveRoleModel(agentDir, depth, fallbackModel, fallbackThinking) {
+  try {
+    const settingsPath = path.join(agentDir, 'settings.json');
+    if (fs.existsSync(settingsPath)) {
+      const cfg = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+      const overrides = cfg?.subagents?.agentOverrides;
+      const roleKey = depth === 1 ? 'literature-coordinator' : 'literature-leaf';
+      const roleOverride = overrides?.[roleKey] || (depth === 1 ? overrides?.['literature-reviewer'] : undefined);
+      let model = fallbackModel;
+      let thinking = fallbackThinking;
+
+      if (typeof roleOverride?.model === 'string' && roleOverride.model.trim()) {
+        model = roleOverride.model.trim();
+      } else if (cfg?.defaultProvider === 'openai' && fallbackModel.startsWith('openai-codex/')) {
+        model = fallbackModel.replace('openai-codex/', 'openai/').replace('gpt-6-sol', 'gpt-6.1-sol');
+      }
+
+      if (typeof roleOverride?.thinking === 'string' && roleOverride.thinking.trim()) {
+        thinking = roleOverride.thinking.trim();
+      }
+
+      return { model, thinking };
+    }
+  } catch {}
+  return { model: fallbackModel, thinking: fallbackThinking };
+}
 export function depthFrom(env) {
   const raw = env.PI_LITERATURE_DEPTH ?? '0';
   if (!/^[0-2]$/.test(raw)) throw new Error('Invalid literature delegation depth');
@@ -23,6 +49,14 @@ export function buildArgs({ cli, extension, agentDir, promptFile, model, thinkin
   // Load the optional Antigravity provider without discovering unrelated extensions.
   const antigravity = path.join(agentDir,'npm','node_modules','pi-antigravity/src/index.ts');
   if (fs.existsSync(antigravity)) args.push('-e',antigravity);
+  // Load the multi-openai provider if an alias provider (e.g. openai-2) is selected.
+  const provider = model.split('/')[0];
+  if (/^openai-\d+$/.test(provider)) {
+    const multiOpenAI = path.join(agentDir, 'extensions', 'multi-openai', 'index.ts');
+    if (fs.existsSync(multiOpenAI)) {
+      args.push('-e', multiOpenAI);
+    }
+  }
   for (const skill of ['research-ideas','pdf-read']) {
     const target = skill === 'research-ideas'
       ? path.join(agentDir,'roles','literature-reviewer','skills',skill,'SKILL.md')

@@ -12,7 +12,15 @@ Or ask the main assistant to use the literature reviewer. The model-callable too
 
     literature_review({task: "A bounded research question, scope, constraints and absolute source paths"})
 
-The command routes through the main assistant so it can supply context. Children do not inherit conversation history; the dispatch task and named source files are their inputs. Model/thinking routing is explicit: Astra/xhigh for the coordinator and Sol/medium for leaves, rather than session inheritance. The optional Antigravity provider is explicitly loaded if installed; built-in providers remain available. Cursor is not loaded. No new provider packages installed.
+The command routes through the main assistant so it can supply context. Children do not inherit conversation history; the dispatch task and named source files are their inputs. Model/thinking routing is dynamically resolved from `settings.json` (`subagents.agentOverrides["literature-coordinator"]` and `["literature-leaf"]`), falling back to Astra/xhigh for coordinator and Sol/medium for leaves. When OpenAI models update, update the override in `settings.json` without editing code or rebuilding extensions. The optional Antigravity provider is explicitly loaded if installed; built-in providers remain available. Cursor is not loaded. No new provider packages installed.
+
+## Pi-Subagents Integration (Approach B)
+
+Literature Reviewer uses a hybrid drop-in architecture (Approach B):
+- The `literature_review` tool interface, project instructions in `AGENTS.md`, and slash command `/literature-reviewer` are fully preserved.
+- The subagent profile `literature-reviewer.md` is registered under `agents/` as a dedicated bridge for `pi-subagents`, delegating directly to the isolated `literature_review` runner with full sandbox, skill, and MCP boundaries. Role models for coordinator (depth 1) and leaf (depth 2) are dynamically configured via `subagents.agentOverrides["literature-coordinator"]` and `["literature-leaf"]` in `settings.json`. Users and agents can invoke reviews either via the tool or via `/subagent literature-reviewer <task>`.
+- Active literature reviews publish to `pi-subagents`'s external-runs registry, surfacing real-time status in FleetView in the TUI.
+- Audit run history, token costs, and unused subagents using the `subagent-history` CLI utility (`bin/subagent-history.py`).
 
 ## Assignment
 

@@ -80,43 +80,37 @@ instructions belong on that machine, not in shared configuration.
 | `config/models.json` | Custom model definitions (`openai-codex/gpt-reserve`) |
 | `config/mcp.json` | MCP servers: `consensus`, `researchfasttrack` (lazy, OAuth) |
 | `skills/` | exploratory-data-analysis, paper-summary, pdf-read, research-workflow, scientific-visualization, skill-maintenance, statistical-analysis, zotero-sync |
-| `extensions/literature-reviewer/` | `literature_review` delegation tool |
+| `agents/` | Subagent definitions (`literature-reviewer` bridge) |
+| `extensions/literature-reviewer/` | `literature_review` delegation tool (Approach B: hybrid subagent integration & FleetView) |
+| [`extensions/multi-openai/`](extensions/multi-openai/README.md) | Multi-account ChatGPT OAuth integration (`openai-2`, etc.), status footer, switch & 429 failover |
 | [`extensions/codex-fast/`](extensions/codex-fast/README.md) | `/fast on\|off\|status`: Codex priority tier, default off; model/thinking unchanged |
 | `roles/literature-reviewer/` | Role skills (`research-ideas`) used by that extension |
 | `optional/mineru/` | Installer + pinned lockfile for the optional MinerU equation backend |
 | `bin/common.sh` | Cross-platform helpers: agent home, OS, python, venv layout, symlink test |
+| `bin/subagent-history.py` | CLI audit tool (`subagent-history`) tracking runs, token costs, and unused subagents |
 
-## Multiple Codex accounts (same session)
+## Multiple OpenAI / ChatGPT accounts (same session)
 
-The settings template includes `@henryqw/pi-multi-codex@2.0.3`.
-For an existing installation, run this in a regular terminal, outside Pi:
+The repository provides the `multi-openai` extension (`extensions/multi-openai`),
+enabling multiple accounts using OpenAI's direct ChatGPT OAuth flow (`chatgpt.tokens.use.direct`
+on `https://api.openai.com/v1`). It is loaded automatically when extensions are linked.
 
-```bash
-pi install npm:@henryqw/pi-multi-codex@2.0.3
-```
+Inside Pi:
 
-This is also required after a resources-only update: pulling this repository does
-not change local package settings. Restart your normal Pi, then:
-
-1. `/login`: authenticate **OpenAI Codex** (slot 1), if not already signed in.
-2. `/codex-add`: create the next numbered slot.
-3. `/login`: select **OpenAI Codex #2** (or the new slot) and sign in with the
-   other account. Repeat to add more accounts.
-4. Restart Pi or update model scope, then run `/codex-status`.
-5. Use `/codex-switch` to switch authenticated accounts within the same session.
+1. `/login openai`: authenticate Account #1 (primary `openai` provider).
+2. `/login openai-2`: authenticate Account #2. Open the OAuth link in a
+   Private/Incognito window or switch accounts in ChatGPT.
+3. `/openai-status`: view authenticated account emails, active slot, and token expiration.
+4. `/openai-switch`: switch the current model between authenticated accounts.
+5. `/openai-add`: enroll additional numbered slots (`openai-3`, `openai-4`, etc.).
+6. `/openai-remove <slot>`: remove credentials for a slot or unenroll an added slot (e.g. `/openai-remove 3`). Alternatively, use Pi's built-in `/logout` command.
 
 If model scope is restricted (`enabledModels` or a scoped session), allow the
-numbered provider's exact model aliases too, such as
-`openai-codex-2/gpt-6-astra`; scoped switching requires eligible aliases.
-Accounts must support the selected model; routing preserves the model ID.
+numbered provider's exact model aliases as well, such as
+`openai-2/gpt-6.1-sol` and `openai-2/gpt-6-astra`.
 
-The extension performs quota-based startup routing and automatic HTTP 429
-failover by default. Its documented automatic-switching opt-out is
-`{"autoSwitchOn429": false}` in
-`~/.pi/agent/config/pi-multi-codex/config.json`.
-Credentials stay on each machine and must be authenticated there; neither this
-repository nor the extension imports accounts from separate profiles.
-Use only accounts you are authorized to access under the provider's policies.
+The extension performs automatic HTTP 429 failover to the next available authenticated
+slot upon rate limiting. Credentials stay in local `auth.json` on each machine.
 
 ## Deliberately not packaged
 
