@@ -23,11 +23,13 @@ function harness(provider='openai-codex', hasUI=true) {
   usageLimits({on:(event,fn)=>handlers.set(event,fn),registerCommand:(name,command)=>commands[name]=command});
   const ctx={model:{provider,id:'test'},hasUI,mode:hasUI?'tui':'print',
     getContextUsage:()=>({tokens:120000,contextWindow:200000}),
+    sessionManager:{getSessionId:()=> 'fixture-session'},
     compact:()=>assert.fail('must not compact below the ceiling'),
     ui:{setStatus:(key,value)=>{assert.ok(hasUI);statuses.set(key,value);},
       notify:message=>{assert.ok(hasUI);notices.push(message);},
       theme:{fg:(_style,text)=>text}}};
-  return {ctx,statuses,notices,emit:(event,data={})=>handlers.get(event)?.(data,ctx),
+  return {ctx,statuses,notices,emit:(event,data={})=>handlers.get(event)?.(
+      event === 'turn_end' ? {outcome:'completed',context:{canContinue:false},...data} : data,ctx),
     command:args=>commands.usage.handler(args,ctx)};
 }
 function mockFetch(t, response={rate_limit:{primary_window:{used_percent:25,limit_window_seconds:18000}}}) {

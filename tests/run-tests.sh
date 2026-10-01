@@ -97,7 +97,7 @@ echo "[4] extension unit tests"
 if command -v node >/dev/null 2>&1; then
   while IFS= read -r t; do
     check "$t" "cd '$(dirname "$t")' && node --test '$(basename "$t")'"
-  done < <(find extensions -type f \( -name 'test-*.mjs' -o -name 'test.mjs' \) | sort)
+  done < <(find extensions tests -type f \( -name 'test-*.mjs' -o -name 'test.mjs' \) | sort)
 else
   echo "  skip (no node)"
 fi

@@ -126,7 +126,12 @@ The extension requests compaction at turn boundaries when estimated context reac
 150,000 tokens, for every provider and in headless sessions too. Pi\'s native
 model-aware compaction remains enabled by default and can compact earlier for
 smaller context windows. The 150k trigger is not a hard input cap: a turn/tool
-result can overshoot it. The footer displays the actual model context window,
+result can overshoot it. Because the extension uses Pi's manual-compaction API,
+that operation aborts the active loop; after successful compaction the extension
+resumes runnable unfinished work with a hidden continuation message. It does not
+restart final answers, failed/aborted turns, or unsuccessful compactions, and
+avoids stale-session or competing queued continuations. The abort notice may
+still appear. The footer displays the actual model context window,
 not the compaction trigger. No model limits or local settings are changed.
 
 ## Deliberately not packaged

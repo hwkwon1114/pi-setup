@@ -478,16 +478,36 @@ export default function (pi: ExtensionAPI) {
 
 	// A research-context ceiling, in addition to native model-aware compaction.
 	// Checked at turn boundaries, not a hard cap on an individual tool result.
-	pi.on("turn_end", (_event, ctx) => {
+	pi.on("turn_end", (event, ctx) => {
 		updateStatus(ctx);
 		const tokens = ctx.getContextUsage()?.tokens;
-		if (tokens == null || tokens < COMPACTION_CEILING || compacting) return;
+		if (tokens == null || tokens < COMPACTION_CEILING || compacting || event.outcome !== "completed") return;
 		compacting = true;
 		const started = generation;
+		const sessionId = ctx.sessionManager.getSessionId();
+		const shouldResume = event.context.canContinue;
+		const isCurrent = () => generation === started && ctx.sessionManager.getSessionId() === sessionId;
 		const done = () => { if (generation === started) compacting = false; };
 		if (ctx.hasUI) ctx.ui.notify("Context reached 150k — auto-compacting…", "info");
 		try {
-			ctx.compact({ onComplete: done, onError: done });
+			// ctx.compact is manual compaction: it aborts the loop and never retries it.
+			// Restore only a runnable continuation, after successful compaction. Do not
+			// turn a completed answer into a new task or restart a cancelled/failed turn.
+			ctx.compact({
+				onComplete: () => {
+					done();
+					if (!isCurrent() || !shouldResume || ctx.hasPendingMessages() || !ctx.isIdle()) return;
+					pi.sendMessage({
+						customType: "context-compaction-resume",
+						content: "Automatic context compaction completed. Continue the existing unfinished task from the summary and retained context; this does not authorize any new work.",
+						display: false,
+					}, { triggerTurn: true, deliverAs: "followUp" });
+				},
+				onError: (error) => {
+					done();
+					if (isCurrent() && ctx.hasUI) ctx.ui.notify(`150k compaction did not complete: ${error.message}`, "warning");
+				},
+			});
 		} catch (error) {
 			done();
 			throw error;
