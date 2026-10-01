@@ -89,6 +89,10 @@ sys.exit(1 if bad else 0)
 EOF
 fi
 
+if [ -n "$PY" ]; then
+  check "research-control policy regression" "\"$PY\" tests/test-research-control.py"
+fi
+
 echo "[4] extension unit tests"
 if command -v node >/dev/null 2>&1; then
   for t in extensions/*/test-*.mjs; do

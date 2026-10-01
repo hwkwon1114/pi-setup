@@ -24,6 +24,17 @@ Structure computational research inquiries, comparative experiment plans, and ev
 
 Read project instructions and relevant existing reviews, notebooks, runners, configurations and reports before changing them. Preserve user work and safeguards; ask only for blocking information. Projects own paths, schemas, environments and resources. Do not connect projects, accounts, machines or data stores without authorization, or infer portability from one host's success.
 
+## Scientific alignment and restored research state
+
+Before implementing a new investigation, read the authoritative objective and
+active record; use [research control](references/research-control.md) to connect
+possible outcomes to the scientific decision and bound supporting diagnostics.
+Restore this state after compaction/resumption or branch changes, before new
+stages and expensive execution, and in delegate handoffs. Reuse existing records;
+ordinary edits and maintenance do not require an experiment protocol. Scientific
+alignment precedes the numerical/training gates; passing them cannot make an
+irrelevant experiment relevant.
+
 ## Organize the argument
 
 **Foundations → Literature → Research questions → Investigations → Findings → Evidence**
@@ -48,7 +59,7 @@ Apply only what the task needs; a small coding change does not require a site or
 - Quarto configuration, rendering or navigation: [Quarto](references/quarto.md).
 - Plots and figure review: use `scientific-visualization`; PDF inspection: use `pdf-read`.
 
-For literature tasks, use Luna for first-pass triage, Sol for synthesis, and Astra for evidence disputes, following the host's escalation policy. Literature discovery follows the host's reviewer routing, not this skill. Reorganizing saved reviews needs no new search: inspect the relevant material completely, preserve access labels, distinguish inherited claims from new checks, and version/hash copied material so teaching content does not silently drift.
+Literature models, delegation and escalation follow the host's routing policy, not this skill. Reorganizing saved reviews needs no new search: inspect the relevant material completely, preserve access labels, distinguish inherited claims from new checks, and version/hash copied material so teaching content does not silently drift.
 
 ## Implement and report minimally
 
@@ -67,6 +78,8 @@ Deliver changed paths, checks actually performed, limitations and the next decis
 Investigation-note template (planning example, not an approved experiment):
 ```text
 Question: [predeclared target, independent sampling unit, evaluation conditions]
+Alignment: [objective link, competing explanations, decision under each outcome]
+Authority: [approved scope, non-goals, information limits, next permitted action]
 Comparators: [provenance, scaling, optimization and regularization for each]
 Design: [group-safe splits, validation selection/stopping and sealed test release]
 Execution gate: [representative loss/gradient checks and tested resumability]
