@@ -7,7 +7,7 @@
     "anthropicExtraUsage": false
   },
   "packages": [
-    "npm:pi-subagents@0.74.0",
+    "npm:pi-subagents@latest",
     "npm:pi-antigravity@latest"
   ],
   "enabledModels": [

@@ -83,7 +83,6 @@ instructions belong on that machine, not in shared configuration.
 | `agents/` | Subagent definitions (`literature-reviewer` bridge) |
 | `extensions/literature-reviewer/` | `literature_review` delegation tool (Approach B: hybrid subagent integration & FleetView) |
 | [`extensions/multi-openai/`](extensions/multi-openai/README.md) | Multi-account ChatGPT OAuth integration (`openai-2`, etc.), status footer, switch & 429 failover |
-| [`extensions/codex-fast/`](extensions/codex-fast/README.md) | `/fast on\|off\|status`: Codex priority tier, default off; model/thinking unchanged |
 | `roles/literature-reviewer/` | Role skills (`research-ideas`) used by that extension |
 | `optional/mineru/` | Installer + pinned lockfile for the optional MinerU equation backend |
 | `bin/common.sh` | Cross-platform helpers: agent home, OS, python, venv layout, symlink test |
