@@ -1,7 +1,7 @@
 # pi setup (portable)
 
 Reproducible copy of the pi agent home (`~/.pi/agent`): shared working preferences,
-skills, extensions (literature reviewer, multi-account Codex and opt-in Codex Fast),
+skills, extensions (literature reviewer, multi-account OpenAI/Codex and usage display),
 and provider/MCP configuration.
 
 ## Install on another machine
@@ -77,12 +77,14 @@ instructions belong on that machine, not in shared configuration.
 | --- | --- |
 | `config/AGENTS.md` | Global working preferences (training, figures, literature routing) |
 | `config/settings.json` | Theme, default model/provider, `packages`, `enabledModels` |
-| `config/models.json` | Custom model definitions (`openai-codex/gpt-reserve`) |
+| `config/models.json` | Model context/output overrides for OpenAI and Antigravity |
 | `config/mcp.json` | Native MCP servers: `consensus`, `researchfasttrack` (codemode exposure; Consensus OAuth) |
-| `skills/` | exploratory-data-analysis, paper-summary, pdf-read, research-workflow, scientific-visualization, skill-maintenance, statistical-analysis, zotero-sync |
-| `agents/` | Subagent definitions (`literature-reviewer` bridge) |
+| `skills/` | Research, analysis, visualization, editable diagrams and maintenance skills |
+| `agents/` | Astra code reviewer and literature-reviewer bridge definitions |
 | `extensions/literature-reviewer/` | `literature_review` delegation tool (Approach B: hybrid subagent integration & FleetView) |
 | [`extensions/multi-openai/`](extensions/multi-openai/README.md) | Multi-account ChatGPT OAuth integration (`openai-2`, etc.), status footer, switch & 429 failover |
+| [`extensions/multi-codex/`](extensions/multi-codex/README.md) | Separate native Codex OAuth slots: `/codex-add`, `/codex-status`, `/codex-switch` |
+| `extensions/usage-limits.ts` | `/usage`, response-header limits and active Codex usage; 150k context compaction trigger |
 | `roles/literature-reviewer/` | Role skills (`research-ideas`) used by that extension |
 | `optional/mineru/` | Installer + pinned lockfile for the optional MinerU equation backend |
 | `bin/common.sh` | Cross-platform helpers: agent home, OS, python, venv layout, symlink test |
@@ -111,6 +113,22 @@ numbered provider's exact model aliases as well, such as
 The extension performs automatic HTTP 429 failover to the next available authenticated
 slot upon rate limiting. Credentials stay in local `auth.json` on each machine.
 
+## Usage display and compaction
+
+`/usage` shows captured limits and cached subscription observations. Codex usage
+is fetched only for the active Codex account, on interactive session/model
+selection (three-minute cache) or `/usage refresh` (forced refresh). No idle polling
+or background checks of other accounts. `/usage raw` shows the cached response.
+Direct OpenAI subscription allowance remains unknown unless a request reports a
+quota block; API rate limits are not subscription allowance.
+
+The extension requests compaction at turn boundaries when estimated context reaches
+150,000 tokens, for every provider and in headless sessions too. Pi\'s native
+model-aware compaction remains enabled by default and can compact earlier for
+smaller context windows. The 150k trigger is not a hard input cap: a turn/tool
+result can overshoot it. The footer displays the actual model context window,
+not the compaction trigger. No model limits or local settings are changed.
+
 ## Deliberately not packaged
 
 Credentials and machine state stay on each machine:
@@ -125,8 +143,10 @@ Credentials and machine state stay on each machine:
 ```
 
 Covers script syntax, CRLF, config JSON, skill frontmatter and cross-references, the
-extensions' unit tests (Codex Fast tests require Node native TypeScript support), install/export round trip (including paths with spaces and
-idempotent reruns), and MinerU dry-runs for both `bin/` and Windows `Scripts/` layouts.
+extensions' unit tests (including multi-Codex and usage-display fixtures), install/export
+round trip (including paths with spaces and idempotent reruns), and MinerU dry-runs
+for both `bin/` and Windows `Scripts/` layouts. TypeScript fixtures require Node
+native TypeScript support (Node 22.18+).
 Checks needing an absent tool (`python3`, `uv`, `node`) are skipped or invert to an
 error-message assertion, so the suite is green on a bare machine too.
 

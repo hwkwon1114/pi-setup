@@ -1,5 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {mkdtempSync, readFileSync, rmSync, writeFileSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+const originalAgentDir = process.env.PI_CODING_AGENT_DIR;
+const agentDir = mkdtempSync(join(tmpdir(), 'pi-codex-test-'));
+process.env.PI_CODING_AGENT_DIR = agentDir;
+test.after(() => {
+  if (originalAgentDir === undefined) delete process.env.PI_CODING_AGENT_DIR;
+  else process.env.PI_CODING_AGENT_DIR = originalAgentDir;
+  rmSync(agentDir, {recursive:true, force:true});
+});
 import multiCodex, {createCodexAlias} from './index.ts';
 import {createAssistantMessageEventStream} from '../multi-openai/index.ts';
 function fixture() {
@@ -34,4 +45,13 @@ test('commands register Codex slot without editing auth or registering OpenAI al
   await commands['codex-add'].handler('',{ui:{notify:s=>notice=s}});
   assert.match(notice,/\/login openai-codex-2/);
   assert.ok(commands['codex-status']);assert.ok(commands['codex-switch']);
+});
+test('stored slots are discovered without mutating fixture credentials', async()=>{
+  const auth=JSON.stringify({'openai-codex-3':{type:'oauth',access:'fixture',accountId:'fixture'},
+    'openai-2':{type:'oauth',access:'fixture',accountId:'fixture'}});
+  const path=join(agentDir,'auth.json');writeFileSync(path,auth);
+  const {native}=fixture();const providers=[];
+  await multiCodex({registerProvider:p=>providers.push(p.id),on:()=>{},registerCommand:()=>{}},native);
+  assert.deepEqual(providers,['openai-codex-2','openai-codex-3']);
+  assert.equal(readFileSync(path,'utf8'),auth);
 });

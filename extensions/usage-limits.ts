@@ -4,7 +4,7 @@
  * Shows rate limit and usage information for OpenAI API and Codex (ChatGPT) providers.
  *
  * - Captures `x-ratelimit-*` headers from OpenAI API responses
- * - Polls `chatgpt.com/backend-api/wham/usage` for Codex subscription usage
+ * - Fetches active Codex usage on session/model selection or explicit refresh
  * - Displays a persistent status bar indicator
  * - Provides a `/usage` command for detailed view
  * - Shows one compact usage summary in the footer only
@@ -12,7 +12,8 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { getAgentDir, type ExtensionAPI, type ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { getAgentDir } from "./multi-openai/index.ts";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -205,10 +206,9 @@ async function fetchCodexUsage(provider: string): Promise<CodexUsageInfo | null>
 	}
 }
 
-// ─── Auto-compaction ─────────────────────────────────────────────────────────
-
-/** Compact when context exceeds this many tokens, regardless of model's native window. */
-const AUTOCOMPACT_THRESHOLD = 150_000;
+const CODEX_PROVIDER = /^openai-codex(?:-([2-9]|[1-9]\d+))?$/;
+const CACHE_MS = 3 * 60 * 1000;
+const COMPACTION_CEILING = 150_000;
 
 // ─── Extension ───────────────────────────────────────────────────────────────
 
@@ -218,7 +218,9 @@ export default function (pi: ExtensionAPI) {
 		codexUsage: new Map(),
 	};
 
-	let pollTimer: ReturnType<typeof setInterval> | undefined;
+	let generation = 0;
+	let compacting = false;
+	const pending = new Map<string, Promise<void>>();
 	let lastActiveProvider: string | undefined;
 	// Observations are model-specific, not inferred percentages or permanent account state.
 	const subscriptionBlocked = new Set<string>();
@@ -240,21 +242,6 @@ export default function (pi: ExtensionAPI) {
 			subscriptionBlocked.delete(key);
 		}
 		updateStatus(ctx);
-	});
-
-	// ─── Universal auto-compaction at fixed token threshold ─────────────
-	// Works for every model without per-model config in models.json.
-
-	pi.on("turn_end", (_event, ctx) => {
-		const usage = ctx.getContextUsage();
-		if (!usage || usage.tokens == null) return;
-
-		if (usage.tokens > AUTOCOMPACT_THRESHOLD) {
-			const tokK = (usage.tokens / 1000).toFixed(0);
-			const threshK = (AUTOCOMPACT_THRESHOLD / 1000).toFixed(0);
-			ctx.ui.notify(`Context ${tokK}k exceeds ${threshK}k — auto-compacting…`, "info");
-			ctx.compact();
-		}
 	});
 
 	// ─── Capture rate-limit headers from API responses ───────────────────
@@ -289,27 +276,31 @@ export default function (pi: ExtensionAPI) {
 		updateStatus(ctx);
 	});
 
-	// ─── Poll Codex usage on model select & periodically ─────────────────
-
-	async function pollCodexProviders(ctx: ExtensionContext) {
-		// Find all codex providers
-		let codexProviders = ["openai-codex"];
-		try {
-			const auth = JSON.parse(readFileSync(join(getAgentDir(), "auth.json"), "utf8"));
-			codexProviders = Object.keys(auth).filter(key => /^openai-codex(?:-([2-9]|[1-9]\d+))?$/.test(key));
-		} catch { /* No stored credentials available. */ }
-
-		for (const provider of codexProviders) {
-			const usage = await fetchCodexUsage(provider);
-			if (usage) {
-				state.codexUsage.set(provider, usage);
-			}
+	// Demand-driven: only the active Codex account, never an idle timer.
+	async function refreshCodexUsage(ctx: ExtensionContext, force = false) {
+		const provider = ctx.model?.provider;
+		if (!ctx.hasUI || !provider || !CODEX_PROVIDER.test(provider)) return;
+		const cached = state.codexUsage.get(provider);
+		if (!force && cached && Date.now() - cached.timestamp < CACHE_MS) return;
+		let request = pending.get(provider);
+		if (!request) {
+			const started = generation;
+			request = (async () => {
+				const usage = await fetchCodexUsage(provider);
+				if (started === generation && usage) state.codexUsage.set(provider, usage);
+			})();
+			pending.set(provider, request);
+			void request.finally(() => {
+				if (pending.get(provider) === request) pending.delete(provider);
+			});
 		}
-
-		updateStatus(ctx);
+		const started = generation;
+		await request;
+		if (started === generation) updateStatus(ctx);
 	}
 
 	function updateStatus(ctx: ExtensionContext) {
+		if (!ctx.hasUI) return;
 		const provider = ctx.model?.provider || lastActiveProvider;
 		if (!provider) {
 			ctx.ui.setStatus("usage-limits", undefined);
@@ -319,7 +310,7 @@ export default function (pi: ExtensionAPI) {
 		const parts: string[] = [];
 		const usage = ctx.getContextUsage();
 		if (usage?.tokens != null) {
-			parts.push(`ctx ${fmtNum(usage.tokens)}/${fmtNum(AUTOCOMPACT_THRESHOLD)}`);
+			parts.push(`ctx ${fmtNum(usage.tokens)}/${fmtNum(usage.contextWindow)}`);
 		}
 
 		if (directSubscriptions.has(provider)) {
@@ -361,31 +352,26 @@ export default function (pi: ExtensionAPI) {
 
 	// ─── Session lifecycle ───────────────────────────────────────────────
 
-	pi.on("session_start", (_event, ctx) => {
+	pi.on("session_start", async (_event, ctx) => {
+		generation++;
+		compacting = false;
+		pending.clear();
 		refreshSubscriptionMetadata();
-		// Remove any widget left by the earlier version; use only the footer.
-		if (ctx.mode === "tui") ctx.ui.setWidget("usage-limits", undefined);
 		updateStatus(ctx);
-		// Initial poll for codex usage
-		void pollCodexProviders(ctx);
-
-		// Poll every 3 minutes
-		pollTimer = setInterval(() => void pollCodexProviders(ctx), 3 * 60 * 1000);
+		await refreshCodexUsage(ctx);
 	});
 
 	pi.on("session_shutdown", () => {
-		if (pollTimer) {
-			clearInterval(pollTimer);
-			pollTimer = undefined;
-		}
+		generation++;
+		pending.clear();
 	});
 
 	// Refresh codex usage on model change
-	pi.on("model_select", (_event, ctx) => {
+	pi.on("model_select", async (_event, ctx) => {
 		refreshSubscriptionMetadata();
 		lastActiveProvider = ctx.model?.provider;
 		updateStatus(ctx);
-		void pollCodexProviders(ctx);
+		await refreshCodexUsage(ctx);
 	});
 
 	// ─── /usage command ──────────────────────────────────────────────────
@@ -393,12 +379,13 @@ export default function (pi: ExtensionAPI) {
 	pi.registerCommand("usage", {
 		description: "Show current usage limits for all providers",
 		handler: async (args, ctx) => {
+			if (!ctx.hasUI) return;
 			refreshSubscriptionMetadata();
 			const refresh = args.trim() === "refresh";
 
 			if (refresh) {
 				ctx.ui.notify("Refreshing usage data…", "info");
-				await pollCodexProviders(ctx);
+				await refreshCodexUsage(ctx, true);
 			}
 
 			const lines: string[] = [];
@@ -489,6 +476,21 @@ export default function (pi: ExtensionAPI) {
 		},
 	});
 
-	// Refresh the footer after each turn; no above-editor widget.
-	pi.on("turn_end", (_event, ctx) => updateStatus(ctx));
+	// A research-context ceiling, in addition to native model-aware compaction.
+	// Checked at turn boundaries, not a hard cap on an individual tool result.
+	pi.on("turn_end", (_event, ctx) => {
+		updateStatus(ctx);
+		const tokens = ctx.getContextUsage()?.tokens;
+		if (tokens == null || tokens < COMPACTION_CEILING || compacting) return;
+		compacting = true;
+		const started = generation;
+		const done = () => { if (generation === started) compacting = false; };
+		if (ctx.hasUI) ctx.ui.notify("Context reached 150k — auto-compacting…", "info");
+		try {
+			ctx.compact({ onComplete: done, onError: done });
+		} catch (error) {
+			done();
+			throw error;
+		}
+	});
 }
