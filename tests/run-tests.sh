@@ -53,13 +53,21 @@ try:
     settings=json.load(open(root/'config/settings.json'))
     enabled=set(settings.get('enabledModels',[]))
     roles=settings.get('subagents',{}).get('agentOverrides',{})
-    for role,model in {'worker':'openai/gpt-6.1-sol','scout':'openai/gpt-6.1-sol',
-                       'researcher':'openai/gpt-6.1-sol','reviewer':'openai/gpt-6-astra',
-                       'oracle':'openai/gpt-6-astra','evidence-auditor':'openai/gpt-6-astra',
-                       'literature-coordinator':'openai/gpt-6-astra','literature-leaf':'openai/gpt-6.1-sol',
-                       'literature-reviewer':'openai/gpt-6-astra'}.items():
-        if roles.get(role,{}).get('model') != model: bad.append(f'{role} model override mismatch')
-        if model not in enabled: bad.append(f'{role} model is not enabled: {model}')
+    role_targets = {
+        'worker': ('openai/gpt-6.1-sol',),
+        'scout': ('openai/gpt-6.1-sol',),
+        'researcher': ('openai/gpt-6.1-sol',),
+        'reviewer': ('openai/gpt-6-astra', 'openai-2/gpt-6-astra'),
+        'oracle': ('openai/gpt-6-astra',),
+        'evidence-auditor': ('openai/gpt-6-astra',),
+        'literature-coordinator': ('openai/gpt-6-astra',),
+        'literature-leaf': ('openai/gpt-6.1-sol',),
+        'literature-reviewer': ('openai/gpt-6-astra',),
+    }
+    for role, allowed in role_targets.items():
+        actual = roles.get(role, {}).get('model')
+        if actual not in allowed: bad.append(f'{role} model override mismatch')
+        if actual not in enabled: bad.append(f'{role} model is not enabled: {actual}')
 except Exception as e: bad.append(f'model routing config invalid: {e}')
 for sk in sorted(root.glob('skills/*/SKILL.md'))+sorted(root.glob('roles/*/skills/*/SKILL.md')):
     t=sk.read_text()

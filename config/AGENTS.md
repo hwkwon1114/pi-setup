@@ -18,6 +18,10 @@ In Pi within VS Code's remote terminal, offer copyable `code /absolute/path` com
 
 Lead with full held-out aggregates and error distributions, respecting dependence. Use matched, error-independently selected examples; disclose selection and omissions. Best/worst cases are labeled diagnostics, not representative comparisons. Use `scientific-visualization` for the detailed procedure.
 
+## Code reviews
+
+- Before launching neural network training, long-running compute jobs, or expensive simulation runs where code or scripts have been created or modified, run an independent review delegate powered by Astra from OpenAI 2 (`astra-code-reviewer` / `openai-2/gpt-6-astra`). If Astra reaches its temporary subscription usage limit, report the quota block and fall back to Sol (`openai-2/gpt-6.1-sol`) if approved. Quick iterative edits and small checks do not require reviews until preparing for a long run or training execution.
+
 ## Literature
 
 - Delegate substantive multi-paper reviews, updates, research gaps and direction comparisons through `literature_review`; announce delegation and pass bounded scope, constraints, existing evidence and absolute paths. A single supplied paper can be summarized in-main with `paper-summary`; configuration, isolated-paper explanations and saved-material reorganization may also stay in-main. Respect explicit no-subagent requests; do not duplicate reviews or bypass dispatch caps.

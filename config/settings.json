@@ -31,7 +31,7 @@
         "model": "openai/gpt-6.1-sol"
       },
       "reviewer": {
-        "model": "openai/gpt-6-astra"
+        "model": "openai-2/gpt-6-astra"
       },
       "oracle": {
         "model": "openai/gpt-6-astra"
