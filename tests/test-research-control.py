@@ -98,6 +98,56 @@ class ResearchControlSourceTests(unittest.TestCase):
         })
 
 
+class ProjectKickoffSourceTests(unittest.TestCase):
+    """Source/link regressions only; no model-selection or behavioral proof."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.skill = ROOT / "skills/research-workflow"
+        cls.main = (cls.skill / "SKILL.md").read_text()
+        cls.guide = (cls.skill / "references/project-kickoff.md").read_text()
+
+    def test_kickoff_is_routed_at_project_start(self):
+        self.assertIn("Use for project kickoff", self.main)
+        self.assertIn("At a new research project's kickoff", self.main)
+        self.assertIn("[project kickoff](references/project-kickoff.md)", self.main)
+        control = (self.skill / "references/research-control.md").read_text()
+        self.assertIn("[project kickoff](project-kickoff.md)", control)
+
+    def test_templates_and_local_links_resolve(self):
+        import re
+        for relative in ("SKILL.md", "references/project-kickoff.md",
+                         "references/research-control.md"):
+            path = self.skill / relative
+            for target in re.findall(r"\]\(([^)]+)\)", path.read_text()):
+                target = target.split("#", 1)[0]
+                if target:
+                    self.assertTrue((path.parent / target).is_file(), target)
+        for name in ("OBJECTIVE", "INVESTIGATION"):
+            template = self.skill / f"templates/{name}.template.md"
+            self.assertTrue(template.is_file())
+            self.assertNotIn("/data/pxl1051", template.read_text())
+
+    def test_existing_projects_and_exploration_are_preserved(self):
+        for phrase in ("sections of the same document", "Preserve existing names",
+                       "label inferred details as provisional",
+                       "Template filenames are examples",
+                       "No fixed compute budget is", "not an\nautomatic hook"):
+            self.assertIn(phrase, self.guide)
+
+    def test_domain_general_claim_limits(self):
+        for phrase in ("Prediction error can itself be the",
+                       "not a universal requirement", "proof or counterexample",
+                       "negative result does not automatically",
+                       "inconclusive outcomes", "ends when its check resolves",
+                       "Never rewrite the purpose retrospectively"):
+            self.assertIn(phrase, self.guide)
+        template = (self.skill / "templates/INVESTIGATION.template.md").read_text()
+        for outcome in ("Supportive", "Contrary / null",
+                        "Inconclusive or implementation failure"):
+            self.assertIn(outcome, template)
+
+
 if __name__ == "__main__":
     # Optional root supports an isolated staged setup; default works from any cwd.
     if len(sys.argv) > 1:

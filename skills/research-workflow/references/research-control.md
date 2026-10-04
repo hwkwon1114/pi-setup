@@ -7,6 +7,10 @@ Apply it to research; ordinary maintenance needs no scientific protocol.
 
 ## Restore the authoritative state
 
+If a new project has no objective or current record, use
+[project kickoff](project-kickoff.md) to establish or draft them from researcher
+intent. Reuse existing documents; missing settled details need not block exploration.
+
 Read the project's objective entry point and active investigation record, not
 just a conversation summary. Reuse existing notes/protocols rather than adding
 a parallel catalog. Restore the ultimate objective, current approved question,
@@ -61,12 +65,15 @@ Record a short alignment statement in the existing investigation/protocol:
 4. **Evidence and design:** Check saved same-version evidence and its limits
    first. Declare fixed/varied factors, information access, independent units
    and the smallest distinguishing test; do not silently substitute a proxy.
-5. **Authority and bounds:** Identify approved scope, cumulative budget,
-   stopping rules, exclusions, sealed-test policy and next permitted action.
+5. **Authority and bounds:** Identify applicable scope, scientific stopping
+   rules, exclusions, information/test-release policy and next permitted action.
+   Honor explicit host constraints; do not invent a fixed-budget approval requirement.
 
-Non-identifiability and negative outcomes may answer the scientific question.
-Good predictions, narrow intervals or passing numerical checks cannot by
-themselves prove physical attribution. Resolve consequential recipe conflicts;
+Negative and inconclusive outcomes can be useful evidence, but a failed run is
+not automatically a falsification or proof of impossibility. Assess alternative
+explanations and adequacy of the test. Improved proxies or successful execution
+do not establish the target claim; prediction metrics may be the target when
+forecasting is the stated purpose. Resolve consequential recipe conflicts;
 do not optimize an irrelevant experiment more carefully.
 
 ## Gate B: execution readiness

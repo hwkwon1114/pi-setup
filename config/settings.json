@@ -14,6 +14,7 @@
   ],
   "enabledModels": [
     "antigravity/gemini-3.8-flash",
+    "antigravity/claude-opus-4-6",
     "codex-auto/gpt-6.1-sol",
     "codex-auto/gpt-6-astra",
     "codex-auto/gpt-6-luna",

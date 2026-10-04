@@ -1,7 +1,7 @@
 ---
 name: research-workflow
-version: 1.1.1
-description: Organize inquiry, problem framing, evidence and handoffs across disciplines. Use for exploration planning, restoring investigation state, experiment planning/reporting, literature integration and research sites. Not required for ordinary edits; not a literature-search or experiment launcher.
+version: 1.2.0
+description: Organize inquiry, problem framing, evidence and handoffs across disciplines. Use for project kickoff, exploration planning, restoring investigation state, experiment planning/reporting, literature integration and research sites. Not required for ordinary edits; not a literature-search or experiment launcher.
 compatibility: Follow the project's environment and execution conventions. Quarto is optional; no shared account, filesystem, tracker or package manager is assumed.
 metadata:
   author: "Hyunwoo Kwon <hwkwkon1114@gmail.com>"
@@ -21,6 +21,16 @@ Help find the next useful question, idea or piece of evidence. Anchor the work i
 Read project instructions and the relevant existing question, notes and evidence. Establish what the user wants to understand or change, what is uncertain, and the next useful action. A provisional question is enough for exploration; do not demand an estimand or experiment protocol before thinking.
 
 Reuse the existing record. Restore its objective, decisions, limits and next action after compaction/resumption or a handoff, and before consequential implementation or expensive execution. Ordinary edits and maintenance do not require an experiment protocol. Keep only state needed to continue accurately; no new dashboard, catalog or document suite by default.
+
+## Start with a purpose anchor
+
+At a new research project's kickoff, or when an existing project lacks a clear
+purpose anchor, use [project kickoff](references/project-kickoff.md). Capture the
+researcher's long-term purpose, evidence for progress, non-goals and first useful
+question before committing to experimental implementation. Reuse existing notes;
+one document can hold both the objective and current investigation. Exploration
+may begin with a provisional question; do not invent a settled objective or force
+an experiment, numeric metric, fixed budget or document suite.
 
 ## Explore broadly; commit deliberately
 

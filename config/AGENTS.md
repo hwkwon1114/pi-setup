@@ -17,11 +17,8 @@ Todos and compressed context are session aids, not authorization or evidence. Ke
 
 ## Experiments
 
-- Within a user-requested, fixed scope and cumulative budget, execute planned experiments and investigations end-to-end without repeated procedural approvals. Apply rigorous methodology (checklists, validation, checkpointing, and reporting), with sensible safety ceilings and early stopping; keep hard limits in the plan or cluster scripts. Ask before extending the budget, restarting from scratch, changing the scientific recipe, or releasing sealed tests outside the predeclared policy. Stop and consult the researcher for unrecoverable failures, allocation overruns, or fundamental changes in direction.
-- Before comparative training, use `research-workflow` for the training checklist. Check provenance, scaling, optimization, regularization and finite losses/gradients for every comparator; equal caps do not establish fairness.
-- Default to group/trajectory-safe validation, predeclared selection/stopping rules and best-checkpoint restoration. Count validation in acquisition budgets; resolve no-extra-data conflicts before fitting and label approved fixed-budget exceptions. Never tune on tests.
-- Preserve curves and selected/final checkpoints; assess overfitting and convergence. Cap-limited results are fixed-recipe evidence, not best achievable performance.
-- For long or large runs, ensure resumable checkpoints so progress is preserved. Handle verified continuation within cumulative resource limits. Stop and consult the researcher only if an unrecoverable failure occurs, runs would exceed declared cluster allocations, or a fundamental change in scientific direction is required.
+- Execute planned experiments and investigations that serve the long-term research purpose end-to-end without repeated procedural approvals. Apply sensible safety ceilings and early stopping; keep hard limits in the plan or cluster scripts. Ask before restarting from scratch, changing the scientific recipe, or releasing sealed tests outside the predeclared policy. Stop and consult the researcher for unrecoverable failures, allocation overruns, or fundamental changes in direction.
+- For comparative training checklists, group-safe validation, stopping rules, and checkpoint resumability, follow `research-workflow`.
 
 ## Research figures
 
