@@ -31,7 +31,9 @@ test('installed SDK + real subagents: closed direct/nested/workflow/alias routes
   process.env.PI_CODING_AGENT_DIR = agentDir;
   // node --test is not Pi's CLI, so identify the installed SDK to the package's supported host resolver.
   process.env.PI_SUBAGENTS_PI_CODING_AGENT_PACKAGE_ROOT = piDir;
-  let session;
+  let session, lifecycleTimer;
+  let shutdownCount = 0;
+  const errors = [];
   try {
     const sdk = await import(pathToFileURL(path.join(piDir, 'dist/index.js')).href);
     const { fauxProvider, fauxAssistantMessage, fauxToolCall } = await import(pathToFileURL(path.join(piDir, 'node_modules/@earendil-works/pi-ai/dist/providers/faux.js')).href);
@@ -77,7 +79,7 @@ test('installed SDK + real subagents: closed direct/nested/workflow/alias routes
     const api = await loadSubagentApi(agentDir);
     const providers = [main, worker, reviewer, safety];
     const settingsManager = sdk.SettingsManager.inMemory(settings, { projectTrusted: true });
-    const errors = [], toolResults = [], events = sdk.createEventBus();
+    const toolResults = [], events = sdk.createEventBus();
     let captured;
     const loader = new sdk.DefaultResourceLoader({ cwd, agentDir, settingsManager, eventBus: events,
       noExtensions: true, noSkills: true, noPromptTemplates: true, noThemes: true, noContextFiles: true,
@@ -94,7 +96,15 @@ test('installed SDK + real subagents: closed direct/nested/workflow/alias routes
               return { content: [{ type: 'text', text: `Nested receipt: ${reply.status}: ${reply.error || ''}` }], details: reply };
             },
           });
-          pi.on('session_start', (_event, ctx) => { captured = ctx; });
+          pi.on('session_start', (_event, ctx) => {
+            captured = ctx;
+            // Deliberately referenced: disposing the SDK alone must not pass cleanup.
+            lifecycleTimer = setInterval(() => {}, 1000);
+          });
+          pi.on('session_shutdown', () => {
+            shutdownCount++;
+            clearInterval(lifecycleTimer); lifecycleTimer = undefined;
+          });
           pi.on('tool_result', event => { toolResults.push(event); });
         } },
         sdk.createCodemodeExtension({ mode: 'on' }),
@@ -163,12 +173,26 @@ test('installed SDK + real subagents: closed direct/nested/workflow/alias routes
     assert(receipts.some(receipt => receipt.status === 'cancelled'));
     assert.deepEqual(errors, []); assert(captured);
     console.log(`ACTION_FUSION_OPTIONAL_CHECK: ${solRoot ? 'passed (fused and unfused writes)' : 'not requested'}`);
-    console.log('OFFLINE_REVIEW_GATE_OK: direct, nested Codemode, opaque workflow, alias and main RPC denied; worker retained; command-owned ordinary/safety faux reviews executed once each, then one bounded cancellation fixture. No live providers or real credentials.');
   } finally {
-    session?.dispose();
-    if (priorDir === undefined) delete process.env.PI_CODING_AGENT_DIR; else process.env.PI_CODING_AGENT_DIR = priorDir;
-    if (priorRoot === undefined) delete process.env.PI_SUBAGENTS_PI_CODING_AGENT_PACKAGE_ROOT; else process.env.PI_SUBAGENTS_PI_CODING_AGENT_PACKAGE_ROOT = priorRoot;
-    // Retain the small temp fixture and receipts for inspection, including on failure.
-    console.log(`Review-gate offline fixture retained: ${temp}`);
+    try {
+      if (session) {
+        await session.abort();
+        // SDK dispose() invalidates contexts but does not emit extension shutdown.
+        // Match Pi's host lifecycle so subagent watchers/transports can close first.
+        await session.extensionRunner.emit({ type: 'session_shutdown', reason: 'quit' });
+        assert.equal(shutdownCount, 1, 'Fixture extension shutdown was skipped');
+        assert.equal(lifecycleTimer, undefined, 'Fixture session resource was not released');
+        assert.deepEqual(errors, [], 'Extension cleanup reported an error');
+      }
+    } finally {
+      session?.dispose();
+      // Keep a failing cleanup assertion from hanging the test process itself.
+      clearInterval(lifecycleTimer);
+      if (priorDir === undefined) delete process.env.PI_CODING_AGENT_DIR; else process.env.PI_CODING_AGENT_DIR = priorDir;
+      if (priorRoot === undefined) delete process.env.PI_SUBAGENTS_PI_CODING_AGENT_PACKAGE_ROOT; else process.env.PI_SUBAGENTS_PI_CODING_AGENT_PACKAGE_ROOT = priorRoot;
+      // Retain the small temp fixture and receipts for inspection, including on failure.
+      console.log(`Review-gate offline fixture retained: ${temp}`);
+    }
   }
+  console.log('OFFLINE_REVIEW_GATE_OK: direct, nested Codemode, opaque workflow, alias and main RPC denied; worker retained; command-owned ordinary/safety faux reviews executed once each, then one bounded cancellation fixture; session shutdown verified. No live providers or real credentials.');
 });

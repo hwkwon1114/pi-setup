@@ -39,6 +39,15 @@ User authorization: always prefer latest pi-subagents, adapt compatibility, and 
 
 **Decision:** keep latest upstream; no fork is needed for 0.75.0. Runtime probes are bounded compatibility checks, not a universal authorization/security certificate. Full regression checks remain the upgrade acceptance step; API breakage calls for adapter/minimal-fork work, not an unannounced downgrade, config change or policy disablement. Normal `/reload` activation and live auth/review quality remain unobserved.
 
+## Post-publication fixture shutdown correction
+
+- Operator reported the Linux integration assertion finishing in 3.907 seconds while Node remained alive for over 14 minutes. The unchanged test exited locally in 2.622 seconds; the exact Linux resource leak is not reproduced or identified.
+- Found a lifecycle omission in `test-integration.mjs`: SDK `dispose()` does not emit `session_shutdown`. The main fixture now aborts, awaits extension shutdown, checks cleanup errors, then disposes/restores its environment. The command-owned review hosts already use this order; runtime policy is unchanged.
+- Added a deliberately referenced session resource and assertions that its shutdown handler runs exactly once and releases it. A retained negative control omitting shutdown exits 1 with `Fixture extension shutdown was skipped`, rather than silently passing. The success marker now follows cleanup.
+- Final focused suite: **25/25 passed, zero skips**, natural process exit in **2.568 seconds**, under an external 30-second ceiling. No forced exit, live providers, credentials, package changes or independent review. Full repository suite and remote Linux rerun were not performed for this correction.
+- Evidence retained in `/tmp/pi-review-shutdown-h3y_4c48/`: `original.log`, `fixed-integration.log`, `gate-suite.log`, `without-shutdown.mjs`, `negative-control.log`, `final-gate-suite.log`. Prior evidence is unchanged. `git diff --check` passed. These checks were recorded before publication; the operator subsequently authorized committing and pushing this correction.
+- Anti-drift: maintenance-only offline lifecycle check; scientific sections 1–6 N/A, sections 7–8 retain failures and qualifications, no scientific/performance claims changed. Keep the narrow cleanup fix; remote shutdown behavior remains to be verified.
+
 ## Anti-drift / claim boundary
 
 | Header | Value |
