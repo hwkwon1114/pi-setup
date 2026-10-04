@@ -42,14 +42,14 @@ try:
         overrides=providers[provider]['modelOverrides']
         for model in ('gpt-6.1-sol','gpt-6-astra'):
             entry=overrides.get(model,{})
-            if entry.get('contextWindow') != 150000 or entry.get('maxTokens') != 32000:
-                bad.append(f'{provider} {model} limits must be 150000/32000')
+            if 'contextWindow' in entry or entry.get('maxTokens') != 32000:
+                bad.append(f'{provider} {model} must use catalog context and 32000 output cap')
         luna=overrides.get('gpt-6-luna',{})
-        if luna.get('contextWindow') != 100000 or luna.get('maxTokens') != 24000:
-            bad.append(f'{provider} Luna limits must be 100000/24000')
+        if 'contextWindow' in luna or luna.get('maxTokens') != 24000:
+            bad.append(f'{provider} Luna must use catalog context and 24000 output cap')
     gemini=json.load(open(root/'config/models.json'))['providers']['antigravity']['modelOverrides'].get('gemini-3.8-flash',{})
-    if gemini.get('contextWindow') != 150000 or gemini.get('maxTokens') != 32000:
-        bad.append('Gemini Flash limits must be 150000/32000')
+    if 'contextWindow' in gemini or gemini.get('maxTokens') != 32000:
+        bad.append('Gemini Flash must use catalog context and 32000 output cap')
     settings=json.load(open(root/'config/settings.json'))
     enabled=set(settings.get('enabledModels',[]))
     roles=settings.get('subagents',{}).get('agentOverrides',{})

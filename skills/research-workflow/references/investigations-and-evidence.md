@@ -43,6 +43,17 @@ Settings changes should normally use a shared runner with configuration variants
 
 Use unique output roots or explicit immutable snapshots. Reject mismatched resumption and silent overwrites. A forced rerun or artifact deletion is a separate decision. Separate heavy outputs from lightweight manifests; ignored files are not backups. A retention policy must preserve paper-linked evidence and record approval before deletion.
 
+## Report completed investigations
+
+Explain the question, evidence, findings and limits before presenting bookkeeping.
+Report completed experiments with meaningful figures from saved results, including
+relevant controls and negative outcomes. Reuse adequate figures and use
+`scientific-visualization` for plotting and rendered checks. Show key figures or
+labeled links in the handoff. If figures cannot be produced, state partial reporting
+and the blocker; do not fabricate evidence or launch more experiments to fill the
+gap. Theory, ordinary edits and non-experimental inquiries need the evidence
+appropriate to their question, not a forced training dashboard.
+
 ## Indexes and paper provenance
 
 Index saved records without importing scientific modules or executing notebook cells. Validate schema, IDs, finite values where required, missing values, counts, and references. Count equality alone does not prove full factorial coverage. Copy only explicit artifacts and check source stability and hashes. Escape data-derived HTML/Markdown.

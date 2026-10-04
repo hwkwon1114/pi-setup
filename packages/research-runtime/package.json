@@ -1,0 +1,15 @@
+{
+  "name": "pi-research-runtime",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@juicesharp/rpiv-todo": "2.12.0",
+    "billion-context": "0.1.182"
+  },
+  "pi": {
+    "extensions": [
+      "./todo.ts",
+      "./context.ts"
+    ]
+  }
+}

@@ -24,7 +24,7 @@ function harness(provider='openai-codex', hasUI=true) {
   const ctx={model:{provider,id:'test'},hasUI,mode:hasUI?'tui':'print',
     getContextUsage:()=>({tokens:120000,contextWindow:200000}),
     sessionManager:{getSessionId:()=> 'fixture-session'},
-    compact:()=>assert.fail('must not compact below the ceiling'),
+    compact:()=>assert.fail('usage display must never request manual compaction'),
     ui:{setStatus:(key,value)=>{assert.ok(hasUI);statuses.set(key,value);},
       notify:message=>{assert.ok(hasUI);notices.push(message);},
       theme:{fg:(_style,text)=>text}}};
@@ -40,24 +40,23 @@ function mockFetch(t, response={rate_limit:{primary_window:{used_percent:25,limi
   });
   return calls;
 }
-test('150k trigger covers providers and headless sessions without duplicate requests',async()=>{
+test('usage display leaves compaction to Pi for all providers, windows and UI modes',async()=>{
   for (const provider of ['openai','openai-codex','antigravity']) {
     for (const hasUI of [true,false]) {
-      const h=harness(provider,hasUI);let tokens=149999;const requests=[];
-      h.ctx.getContextUsage=()=>({tokens,contextWindow:272000});
-      h.ctx.compact=options=>requests.push(options);
-      await h.emit('turn_end');assert.equal(requests.length,0);
-      tokens=150000;await h.emit('turn_end');assert.equal(requests.length,1);
-      await h.emit('turn_end');assert.equal(requests.length,1);
-      requests[0].onComplete();tokens=null;
-      await h.emit('turn_end');assert.equal(requests.length,1);
-      tokens=150001;await h.emit('turn_end');assert.equal(requests.length,2);
-      requests[1].onError(new Error('fixture'));
-      await h.emit('turn_end');assert.equal(requests.length,3);
+      const h=harness(provider,hasUI);
+      for (const contextWindow of [100000,272000,1000000]) {
+        for (const tokens of [149999,150000,150001,contextWindow-1,contextWindow+1,null]) {
+          h.ctx.getContextUsage=()=>({tokens,contextWindow});
+          await h.emit('turn_end');
+          await h.emit('turn_end',{outcome:'aborted'});
+          await h.emit('turn_end',{outcome:'error'});
+        }
+      }
+      assert(h.notices.every(message=>!message.includes('compacting')));
     }
   }
 });
-test('no idle timer, non-Codex polling, or compaction below ceiling',async t=>{
+test('no idle timer, non-Codex polling, or manual compaction',async t=>{
   const calls=mockFetch(t);
   t.mock.method(globalThis,'setInterval',()=>assert.fail('no idle polling'));
   const h=harness('openai');

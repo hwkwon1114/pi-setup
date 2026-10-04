@@ -19,6 +19,34 @@ authorized work autonomously within its scope. Explicit researcher changes can
 revise the objective; retain their provenance and do not rigidly enforce an old
 objective against a new request.
 
+## Exploration is not an execution gate
+
+The objective anchors relevance, not a disciplinary boundary. Exploring an
+analogy, alternative framing or mechanism from another field within the requested
+inquiry is not itself a new experiment and needs no repeated procedural approval.
+Use `cross-domain-idea-transfer` when useful; check assumption mismatches and
+separate source claims from proposed transfers. Gates A/B apply when committing
+to scientific implementation/execution, not to every idea. A materially different
+objective is proposed or explicitly researcher-directed, not silently adopted.
+
+## Todos and compressed context
+
+Use the `todo` tool for coarse deliverables in substantial multi-step work, not
+every action or brainstorming idea. Keep the existing markdown record authoritative
+for the objective, scope, decisions, evidence paths and next authorized action.
+Update tasks at meaningful milestones; completion requires the deliverable and
+applicable checks, not merely a plan or a successful command.
+
+Before long-context compression, make consequential decisions, qualifications,
+failed attempts, pending reviews and exact evidence locations durable in that
+record. Use `compress` for consumed spans, keeping the current working set.
+After resumption or compression, list outstanding todos and read the current
+record. Use `search_context` to locate older material and `decompress` for exact
+details when needed; summaries and restored text are leads, not fresh verification.
+Recheck consequential primary evidence rather than treating a remembered summary
+as proof. These tools do not reset budgets, widen permissions or revive retired
+experiment queues.
+
 ## Gate A: scientific alignment before implementation
 
 Record a short alignment statement in the existing investigation/protocol:

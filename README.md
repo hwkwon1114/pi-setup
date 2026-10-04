@@ -77,14 +77,15 @@ instructions belong on that machine, not in shared configuration.
 | --- | --- |
 | `config/AGENTS.md` | Global working preferences (training, figures, literature routing) |
 | `config/settings.json` | Theme, default model/provider, `packages`, `enabledModels` |
-| `config/models.json` | Model context/output overrides for OpenAI and Antigravity |
+| `config/models.json` | Output caps for OpenAI and Antigravity; context windows come from the model catalog |
 | `config/mcp.json` | Native MCP servers: `consensus`, `researchfasttrack` (codemode exposure; Consensus OAuth) |
 | `skills/` | Research, analysis, visualization, editable diagrams and maintenance skills |
 | `agents/` | Astra code reviewer and literature-reviewer bridge definitions |
 | `extensions/literature-reviewer/` | `literature_review` delegation tool (Approach B: hybrid subagent integration & FleetView) |
 | [`extensions/multi-openai/`](extensions/multi-openai/README.md) | Multi-account ChatGPT OAuth integration (`openai-2`, etc.), status footer, switch & 429 failover |
 | [`extensions/multi-codex/`](extensions/multi-codex/README.md) | Separate native Codex OAuth slots: `/codex-add`, `/codex-status`, `/codex-switch` |
-| `extensions/usage-limits.ts` | `/usage`, response-header limits and active Codex usage; 150k context compaction trigger |
+| `extensions/usage-limits.ts` | `/usage`, response-header limits and active Codex usage; display only, native compaction |
+| [`extensions/review-gate/`](extensions/review-gate/README.md) | Explicit `/review-change` authorization; latest-first API compatibility checks, scheduling restrictions documented |
 | `roles/literature-reviewer/` | Role skills (`research-ideas`) used by that extension |
 | `optional/mineru/` | Installer + pinned lockfile for the optional MinerU equation backend |
 | `bin/common.sh` | Cross-platform helpers: agent home, OS, python, venv layout, symlink test |
@@ -122,23 +123,58 @@ or background checks of other accounts. `/usage raw` shows the cached response.
 Direct OpenAI subscription allowance remains unknown unless a request reports a
 quota block; API rate limits are not subscription allowance.
 
-The extension requests compaction at turn boundaries when estimated context reaches
-150,000 tokens, for every provider and in headless sessions too. Pi\'s native
-model-aware compaction remains enabled by default and can compact earlier for
-smaller context windows. The 150k trigger is not a hard input cap: a turn/tool
-result can overshoot it. Because the extension uses Pi's manual-compaction API,
-that operation aborts the active loop; after successful compaction the extension
-resumes runnable unfinished work with a hidden continuation message. It does not
-restart final answers, failed/aborted turns, or unsuccessful compactions, and
-avoids stale-session or competing queued continuations. The abort notice may
-still appear. The footer displays the actual model context window,
-not the compaction trigger. No model limits or local settings are changed.
+Native compaction remains enabled as fallback. With the research runtime installed, billion-context owns routed conversations and cancels automatic threshold/overflow compaction only when it owns that conversation. Manual `/compact` remains user-owned. Without the proxy, Pi's native model-aware controller applies. The threshold/lifecycle details below describe that native fallback, not the proxy compression strategy.
+It triggers above `model.contextWindow - compaction.reserveTokens` (default
+reserve: 16,384 tokens), using the selected model's catalog metadata instead of
+local fixed context caps. Output caps in `config/models.json` remain unchanged.
+Switching models changes the next threshold; exact provider/model reserve
+overrides and project settings are honored.
+
+Pi 1.0.0 checks after a tool batch finishes, before the next assistant response,
+and before a new user prompt. It pauses to summarize and continues the existing
+run without this extension calling manual compaction, aborting it, or injecting
+a hidden replacement turn. The usage extension only displays context and quota
+observations. Compaction still takes time and can fail or be cancelled; provider
+overflow recovery is a separate native path. Catalog metadata must describe the
+real endpoint limits; this is not a guarantee against oversized tool results
+or perfect summary retention.
+
+Offline regression evidence and limitations: [dynamic compaction handoff](tests/usage-compaction/review.md).
+Run `/reload` after applying the resource changes; use `/model` and reselect
+the current model to load refreshed metadata (or restart Pi). Already-running
+sessions may retain the old controller/model until then.
+
+## Todo and long-context research runtime
+
+`packages/research-runtime` isolates pinned rpiv-todo 2.12.0 and billion-context
+0.1.182 dependencies from Pi's shared npm tree. After installing this setup, run
+in the **installed agent-home package**, so both copy and link installs work:
+
+```bash
+npm ci --prefix "${PI_CODING_AGENT_DIR:-${PI_AGENT_HOME:-$HOME/.pi/agent}}/packages/research-runtime" --ignore-scripts --omit=optional --legacy-peer-deps
+```
+
+For `--dest`, replace the prefix with that destination's `packages/research-runtime`.
+
+Restart Pi; `/todos` displays milestones and `/acp` reports proxy context.
+The local adapters use coarse tasks and disable background ordinary/advisory
+updates, release polling, auto-restart and certificate MITM. No alternate delegate
+or standalone billion-context-pi is installed. Credentials and reviewer routing
+remain unchanged. Method guidance stays in research-workflow; project markdown,
+not task status or compressed summaries, is authoritative.
+
+SoL-Pi, including Action Fusion, is no longer loaded in normal runtime.
+A local `packages/sol-pi` snapshot may be retained for history; it is excluded
+from publication. All SoL-Pi features are off.
+See [runtime scope and limits](packages/research-runtime/README.md).
+Native SDK/loopback fixtures are not proof of real OAuth, WebSocket, image,
+child-routing, compression fidelity or scientific-performance compatibility.
 
 ## Deliberately not packaged
 
 Credentials and machine state stay on each machine:
 `auth.json`, `models-store.json`, `mcp-cache.json`, `trust.json`, `sessions/`,
-`literature-review-runs/`, `npm/node_modules/`, `bin/` (platform binaries),
+`literature-review-runs/`, `review-change-runs/`, `npm/node_modules/`, `bin/` (platform binaries),
 `backups/`, `extension-backups/`, `skill-maintenance/` working dirs.
 
 ## Self-check

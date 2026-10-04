@@ -8,7 +8,8 @@
   },
   "packages": [
     "npm:pi-subagents@latest",
-    "npm:pi-antigravity@latest"
+    "npm:pi-antigravity@latest",
+    "./packages/research-runtime"
   ],
   "enabledModels": [
     "openai/gpt-6.1-sol",

@@ -6,6 +6,8 @@ Keep instructions and deliverables minimal: shared defaults here, project facts 
 
 In Pi within VS Code's remote terminal, offer copyable `code /absolute/path` commands, not file hyperlinks. Verify files exist and quote paths containing spaces. Ordinary web links are fine.
 
+Todos and compressed context are session aids, not authorization or evidence. Keep project markdown authoritative; use research-workflow for the method.
+
 ## Research direction and restored context
 
 - For research work, read the authoritative objective and active investigation record at session start, after compaction/resumption or branch changes, and before a new stage or expensive execution. Restore the scientific target, approved scope, information/resource limits, rejected directions, unresolved conflicts and next authorized action; a summary or historical queue is not authorization.

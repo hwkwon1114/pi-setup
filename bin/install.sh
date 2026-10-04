@@ -70,7 +70,7 @@ for f in AGENTS.md settings.json models.json mcp.json; do
 done
 
 # --- directory payloads --------------------------------------------------------
-for d in skills extensions roles agents; do
+for d in skills extensions roles agents packages; do
   [ -d "$REPO/$d" ] || continue
   if [ "$MODE" = link ] && [ -L "$DST/$d" ] && [ "$(readlink "$DST/$d")" = "$REPO/$d" ]; then
     say "= $d/ (already linked)"
@@ -90,8 +90,8 @@ done
 cat <<'EOF'
 
 Done. Remaining manual steps on a fresh machine:
-  1. Start pi and sign in to each provider (auth.json is intentionally not packaged).
-  2. pi installs the npm packages listed in settings.json on first launch; verify with /packages.
+  1. Before starting pi, run npm ci --ignore-scripts --omit=optional --legacy-peer-deps inside <installed agent home>/packages/research-runtime (not the checkout after a copy install).
+  2. Start pi and sign in to each provider (auth.json is intentionally not packaged). Pi installs declared npm packages on first launch.
   3. MCP servers in mcp.json (consensus, researchfasttrack) need their own OAuth on first use.
   4. Optional helper binaries (<agent home>/bin/rg, fd) are platform-specific; install locally if wanted.
   5. enabledModels assumes the same provider set; prune entries for providers you do not have.

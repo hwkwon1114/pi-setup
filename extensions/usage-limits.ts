@@ -208,7 +208,6 @@ async function fetchCodexUsage(provider: string): Promise<CodexUsageInfo | null>
 
 const CODEX_PROVIDER = /^openai-codex(?:-([2-9]|[1-9]\d+))?$/;
 const CACHE_MS = 3 * 60 * 1000;
-const COMPACTION_CEILING = 150_000;
 
 // ─── Extension ───────────────────────────────────────────────────────────────
 
@@ -219,7 +218,6 @@ export default function (pi: ExtensionAPI) {
 	};
 
 	let generation = 0;
-	let compacting = false;
 	const pending = new Map<string, Promise<void>>();
 	let lastActiveProvider: string | undefined;
 	// Observations are model-specific, not inferred percentages or permanent account state.
@@ -354,7 +352,6 @@ export default function (pi: ExtensionAPI) {
 
 	pi.on("session_start", async (_event, ctx) => {
 		generation++;
-		compacting = false;
 		pending.clear();
 		refreshSubscriptionMetadata();
 		updateStatus(ctx);
@@ -476,41 +473,9 @@ export default function (pi: ExtensionAPI) {
 		},
 	});
 
-	// A research-context ceiling, in addition to native model-aware compaction.
-	// Checked at turn boundaries, not a hard cap on an individual tool result.
-	pi.on("turn_end", (event, ctx) => {
+	// Display only: native model-aware compaction owns the between-turn pause
+	// and continuation. Manual ctx.compact() here would abort the active loop.
+	pi.on("turn_end", (_event, ctx) => {
 		updateStatus(ctx);
-		const tokens = ctx.getContextUsage()?.tokens;
-		if (tokens == null || tokens < COMPACTION_CEILING || compacting || event.outcome !== "completed") return;
-		compacting = true;
-		const started = generation;
-		const sessionId = ctx.sessionManager.getSessionId();
-		const shouldResume = event.context.canContinue;
-		const isCurrent = () => generation === started && ctx.sessionManager.getSessionId() === sessionId;
-		const done = () => { if (generation === started) compacting = false; };
-		if (ctx.hasUI) ctx.ui.notify("Context reached 150k — auto-compacting…", "info");
-		try {
-			// ctx.compact is manual compaction: it aborts the loop and never retries it.
-			// Restore only a runnable continuation, after successful compaction. Do not
-			// turn a completed answer into a new task or restart a cancelled/failed turn.
-			ctx.compact({
-				onComplete: () => {
-					done();
-					if (!isCurrent() || !shouldResume || ctx.hasPendingMessages() || !ctx.isIdle()) return;
-					pi.sendMessage({
-						customType: "context-compaction-resume",
-						content: "Automatic context compaction completed. Continue the existing unfinished task from the summary and retained context; this does not authorize any new work.",
-						display: false,
-					}, { triggerTurn: true, deliverAs: "followUp" });
-				},
-				onError: (error) => {
-					done();
-					if (isCurrent() && ctx.hasUI) ctx.ui.notify(`150k compaction did not complete: ${error.message}`, "warning");
-				},
-			});
-		} catch (error) {
-			done();
-			throw error;
-		}
 	});
 }
