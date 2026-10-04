@@ -1,44 +1,56 @@
 {
   "theme": "light",
-  "defaultProvider": "openai",
+  "defaultProvider": "openai-codex",
   "defaultModel": "gpt-6.1-sol",
   "defaultThinkingLevel": "medium",
   "warnings": {
     "anthropicExtraUsage": false
   },
+  "extensions": ["-extensions/multi-openai/index.ts"],
   "packages": [
     "npm:pi-subagents@latest",
     "npm:pi-antigravity@latest",
     "./packages/research-runtime"
   ],
   "enabledModels": [
-    "openai/gpt-6.1-sol",
-    "openai/gpt-6-astra",
-    "openai/gpt-6-luna",
-    "openai-2/gpt-6.1-sol",
-    "openai-2/gpt-6-astra",
-    "openai-2/gpt-6-luna",
-    "antigravity/gemini-3.8-flash"
+    "antigravity/gemini-3.8-flash",
+    "codex-auto/gpt-6.1-sol",
+    "codex-auto/gpt-6-astra",
+    "codex-auto/gpt-6-luna",
+    "openai-codex/gpt-6.1-sol",
+    "openai-codex/gpt-6-astra",
+    "openai-codex/gpt-6-luna",
+    "openai-codex-2/gpt-6.1-sol",
+    "openai-codex-2/gpt-6-astra",
+    "openai-codex-2/gpt-6-luna",
+    "openai-codex-3/gpt-6.1-sol",
+    "openai-codex-3/gpt-6-astra",
+    "openai-codex-3/gpt-6-luna"
   ],
   "subagents": {
+    "defaultModel": "codex-auto/gpt-6.1-sol",
+    "defaultSubagentOnlyExtensions": ["~/.pi/agent/extensions/multi-codex/index.ts"],
     "agentOverrides": {
+      "astra-code-reviewer": {
+        "model": "codex-auto/gpt-6-astra"
+      },
       "worker": {
-        "model": "openai/gpt-6.1-sol"
+        "model": "codex-auto/gpt-6.1-sol"
       },
       "scout": {
-        "model": "openai/gpt-6.1-sol"
+        "model": "codex-auto/gpt-6.1-sol"
       },
       "researcher": {
-        "model": "openai/gpt-6.1-sol"
+        "model": "codex-auto/gpt-6.1-sol"
       },
       "reviewer": {
-        "model": "openai-2/gpt-6-astra"
+        "model": "codex-auto/gpt-6-astra"
       },
       "oracle": {
-        "model": "openai/gpt-6-astra"
+        "model": "codex-auto/gpt-6-astra"
       },
       "evidence-auditor": {
-        "model": "openai/gpt-6-astra",
+        "model": "codex-auto/gpt-6-astra",
         "disabled": true
       },
       "claude-code": {
@@ -63,15 +75,15 @@
         "disabled": true
       },
       "literature-coordinator": {
-        "model": "openai/gpt-6-astra",
+        "model": "openai-codex/gpt-6-astra",
         "thinking": "xhigh"
       },
       "literature-leaf": {
-        "model": "openai/gpt-6.1-sol",
+        "model": "openai-codex/gpt-6.1-sol",
         "thinking": "medium"
       },
       "literature-reviewer": {
-        "model": "openai/gpt-6-astra",
+        "model": "openai-codex/gpt-6-astra",
         "thinking": "xhigh"
       }
     }

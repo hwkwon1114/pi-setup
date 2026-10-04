@@ -1,5 +1,11 @@
 # Multi-OpenAI extension for Pi
 
+Legacy compatibility source: direct-OpenAI registration is disabled in personal
+and portable settings. Codex is the standard account route; use
+[Multi-account Codex login](../multi-codex/README.md). Existing credentials are
+preserved. Codex and usage display still import helper functions from this file,
+which does not activate its default extension function.
+
 Multi-account ChatGPT OAuth integration for Pi, registering secondary and tertiary
 account slots (`openai-2`, `openai-3`, etc.) alongside the native `openai` provider.
 

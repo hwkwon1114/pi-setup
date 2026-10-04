@@ -3,6 +3,7 @@ import type { Provider, Model, TranscriptContext } from "@earendil-works/pi-ai";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { aliasStream, getAgentDir } from "../multi-openai/index.ts";
+import { createQuotaService, registerCodexRouter } from "./router.mjs";
 
 const BASE = "openai-codex";
 const SLOT = /^openai-codex-([2-9]|[1-9]\d+)$/;
@@ -65,6 +66,11 @@ export default async function multiCodex(pi: ExtensionAPI, suppliedNative?: Prov
   }
   function sync() { register(2); credentials().forEach(register); }
   sync();
+  const quotaService = createQuotaService({ readCredentials: () => {
+    try { return JSON.parse(readFileSync(join(getAgentDir(), "auth.json"), "utf8")); }
+    catch { return {}; }
+  } });
+  registerCodexRouter(pi, native, quotaService);
   pi.on("session_start", sync);
   pi.registerCommand("codex-add", {
     description: "Add a Codex OAuth account slot without modifying OpenAI logins",

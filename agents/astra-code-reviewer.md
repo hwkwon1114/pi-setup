@@ -2,7 +2,7 @@
 name: astra-code-reviewer
 description: Independent pre-execution code and scientific-alignment review for training, long-running benchmarks and expensive simulations.
 tools: read, grep, find, ls, watchdog_diff
-model: openai-2/gpt-6-astra
+model: openai-codex/gpt-6-astra
 thinking: high
 systemPromptMode: replace
 inheritProjectContext: true

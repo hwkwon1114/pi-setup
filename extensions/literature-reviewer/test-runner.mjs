@@ -25,7 +25,7 @@ test('coordinator stays Astra/xhigh and leaves use Sol/medium',t=>{
  for(const rel of ['roles/literature-reviewer/skills/research-ideas','skills/pdf-read']) {
   const dir=path.join(root,rel);fs.mkdirSync(dir,{recursive:true});fs.writeFileSync(path.join(dir,'SKILL.md'),'fixture');
  }
- for(const [depth,model,thinking] of [[1,'openai/gpt-6-astra','xhigh'],[2,'openai/gpt-6.1-sol','medium']]) {
+ for(const [depth,model,thinking] of [[1,'openai-codex/gpt-6-astra','xhigh'],[2,'openai-codex/gpt-6.1-sol','medium']]) {
   const selected=select(depth);assert.deepEqual(selected,{model,thinking});
   const args=buildArgs({cli:'pi.js',extension:'index.ts',agentDir:root,promptFile:'role.md',depth,...selected});
   assert.equal(args[args.indexOf('--model')+1],model);
@@ -49,9 +49,9 @@ test('role model override dynamically resolves from settings.json or defaults', 
 
  fs.writeFileSync(path.join(root, 'settings.json'), JSON.stringify({ defaultProvider: 'openai' }));
  const d2 = resolveRoleModel(root, 1, 'openai-codex/gpt-6-astra', 'xhigh');
- assert.deepEqual(d2, { model: 'openai/gpt-6-astra', thinking: 'xhigh' });
- const d3 = resolveRoleModel(root, 2, 'openai-codex/gpt-6-sol', 'medium');
- assert.deepEqual(d3, { model: 'openai/gpt-6.1-sol', thinking: 'medium' });
+ assert.deepEqual(d2, { model: 'openai-codex/gpt-6-astra', thinking: 'xhigh' });
+ const d3 = resolveRoleModel(root, 2, 'openai-codex/gpt-6.1-sol', 'medium');
+ assert.deepEqual(d3, { model: 'openai-codex/gpt-6.1-sol', thinking: 'medium' });
 
  fs.writeFileSync(path.join(root, 'settings.json'), JSON.stringify({
    subagents: {
@@ -98,6 +98,21 @@ test('buildArgs loads multi-openai extension when model uses an alias provider',
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
+});
+test('Codex numbered slots load only the Codex adapter and missing adapters fail closed', t => {
+ const root=temp();t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+ for(const rel of ['roles/literature-reviewer/skills/research-ideas','skills/pdf-read']) {
+  const dir=path.join(root,rel);fs.mkdirSync(dir,{recursive:true});fs.writeFileSync(path.join(dir,'SKILL.md'),'fixture');
+ }
+ const adapter=path.join(root,'extensions','multi-codex','index.ts');
+ const legacy=path.join(root,'extensions','multi-openai','index.ts');
+ for(const file of [adapter,legacy]) {fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,'fixture');}
+ for(const provider of ['openai-codex','openai-codex-2','openai-codex-3','openai-codex-10']) {
+  const args=buildArgs({cli:'pi.js',extension:'index.ts',agentDir:root,promptFile:'role.md',model:provider+'/gpt-6-astra',depth:1});
+  assert.equal(args.includes(adapter),provider!=='openai-codex');assert(!args.includes(legacy));
+ }
+ fs.rmSync(adapter);
+ assert.throws(()=>buildArgs({cli:'pi.js',extension:'index.ts',agentDir:root,promptFile:'role.md',model:'openai-codex-2/gpt-6-astra',depth:1}),/Missing Codex account adapter/);
 });
 test('successful child stores report',async()=>{const root=temp();const r=await runProcess({command:process.execPath,args:['-e',emit],cwd:root,env:process.env,task:'fixture',runDir:root,timeoutMs:2000});assert(r.ok);assert.equal(fs.readFileSync(r.report,'utf8'),'fixture report');fs.rmSync(root,{recursive:true});});
 test('nonzero child fails even with report',async()=>{const root=temp();const r=await runProcess({command:process.execPath,args:['-e',emit+'process.exitCode=1;'],cwd:root,env:process.env,task:'fixture',runDir:root,timeoutMs:2000});assert(!r.ok);fs.rmSync(root,{recursive:true});});

@@ -113,7 +113,10 @@ export async function runOwnedReview({ sdk, api, agentDir, agent, task, timeoutM
     const loader = new sdk.DefaultResourceLoader({
       cwd: ctx.cwd, agentDir, settingsManager, eventBus: events,
       noExtensions: true, noSkills: true, noPromptTemplates: true, noThemes: true, noContextFiles: true,
-      additionalExtensionPaths: [path.join(api.root, 'index.js')],
+      // The command owner needs the virtual catalog before child model resolution.
+      // No quota checks/model calls occur merely from loading this adapter.
+      additionalExtensionPaths: [path.join(api.root, 'index.js'),
+        ...[path.join(agentDir, 'extensions/multi-codex/index.ts')].filter(file => fs.existsSync(file))],
     });
     await loader.reload(); check();
     if (loader.getExtensions().errors.length) throw new Error(JSON.stringify(loader.getExtensions().errors));

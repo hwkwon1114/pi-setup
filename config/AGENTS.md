@@ -29,9 +29,9 @@ Lead with full held-out aggregates and error distributions, respecting dependenc
 
 ## Code reviews
 
-- Before neural-network training, long-running compute jobs or expensive simulations involving newly written/modified code, complete an independent pre-execution review with `astra-code-reviewer` / `openai-2/gpt-6-astra`. Quick edits, small exploratory checks and explicitly bounded correctness fixtures do not require reviews; repeated fixtures must not become an unreviewed training campaign. Declare their scope and ceiling before execution.
+- Before neural-network training, long-running compute jobs or expensive simulations involving newly written/modified code, complete an independent pre-execution review with `astra-code-reviewer` / `openai-codex/gpt-6-astra`. Quick edits, small exploratory checks and explicitly bounded correctness fixtures do not require reviews; repeated fixtures must not become an unreviewed training campaign. Declare their scope and ceiling before execution.
 - Wait for the verdict and resolve launch-blocking findings before execution. Review scientific relevance as well as code, tests, data access, numerical standards, stopping and resumability under the actual project contract. Record reviewed code/config/data/design identities and scope in the existing run review; consequential changes require reassessment. An absent, failed or stale review is not approval. `APPROVED_WITH_CAVEATS` permits launch only with no unresolved launch blockers and with limits recorded. Approval does not expand scope or release sealed tests.
-- If Astra reaches its temporary subscription usage limit, report the quota block; use Sol (`openai-2/gpt-6.1-sol`) only if approved, otherwise await reset. These are instruction-based gates, not a runtime launch guarantee.
+- If Astra reaches its temporary subscription usage limit, report the quota block; use Sol (`openai-codex/gpt-6.1-sol`) only if approved, otherwise await reset. These are instruction-based gates, not a runtime launch guarantee.
 
 ## Literature
 

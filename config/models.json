@@ -1,22 +1,49 @@
 {
   "providers": {
-    "openai": {
-      "modelOverrides": {
-        "gpt-6.1-sol": { "maxTokens": 32000 },
-        "gpt-6-astra": { "maxTokens": 32000 },
-        "gpt-6-luna": { "maxTokens": 24000 }
-      }
-    },
-    "openai-2": {
-      "modelOverrides": {
-        "gpt-6.1-sol": { "maxTokens": 32000 },
-        "gpt-6-astra": { "maxTokens": 32000 },
-        "gpt-6-luna": { "maxTokens": 24000 }
-      }
-    },
     "antigravity": {
       "modelOverrides": {
-        "gemini-3.8-flash": { "maxTokens": 32000 }
+        "gemini-3.8-flash": {
+          "maxTokens": 32000
+        }
+      }
+    },
+    "openai-codex": {
+      "modelOverrides": {
+        "gpt-6.1-sol": {
+          "maxTokens": 32000
+        },
+        "gpt-6-astra": {
+          "maxTokens": 32000
+        },
+        "gpt-6-luna": {
+          "maxTokens": 32000
+        }
+      }
+    },
+    "openai-codex-2": {
+      "modelOverrides": {
+        "gpt-6.1-sol": {
+          "maxTokens": 32000
+        },
+        "gpt-6-astra": {
+          "maxTokens": 32000
+        },
+        "gpt-6-luna": {
+          "maxTokens": 32000
+        }
+      }
+    },
+    "openai-codex-3": {
+      "modelOverrides": {
+        "gpt-6.1-sol": {
+          "maxTokens": 32000
+        },
+        "gpt-6-astra": {
+          "maxTokens": 32000
+        },
+        "gpt-6-luna": {
+          "maxTokens": 32000
+        }
       }
     }
   }

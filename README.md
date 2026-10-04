@@ -77,13 +77,13 @@ instructions belong on that machine, not in shared configuration.
 | --- | --- |
 | `config/AGENTS.md` | Global working preferences (training, figures, literature routing) |
 | `config/settings.json` | Theme, default model/provider, `packages`, `enabledModels` |
-| `config/models.json` | Output caps for OpenAI and Antigravity; context windows come from the model catalog |
+| `config/models.json` | Output caps for Codex account slots and Antigravity; context windows come from the model catalog |
 | `config/mcp.json` | Native MCP servers: `consensus`, `researchfasttrack` (codemode exposure; Consensus OAuth) |
 | `skills/` | Research, analysis, visualization, editable diagrams and maintenance skills |
 | `agents/` | Astra code reviewer and literature-reviewer bridge definitions |
 | `extensions/literature-reviewer/` | `literature_review` delegation tool (Approach B: hybrid subagent integration & FleetView) |
-| [`extensions/multi-openai/`](extensions/multi-openai/README.md) | Multi-account ChatGPT OAuth integration (`openai-2`, etc.), status footer, switch & 429 failover |
-| [`extensions/multi-codex/`](extensions/multi-codex/README.md) | Separate native Codex OAuth slots: `/codex-add`, `/codex-status`, `/codex-switch` |
+| [`extensions/multi-openai/`](extensions/multi-openai/README.md) | Legacy direct-OpenAI adapter, disabled by settings; retained for compatibility and shared helpers |
+| [`extensions/multi-codex/`](extensions/multi-codex/README.md) | Native Codex OAuth slots and quota-aware virtual routing: `/codex-add`, `/codex-status`, `/codex-switch`, `/codex-auto-status` |
 | `extensions/usage-limits.ts` | `/usage`, response-header limits and active Codex usage; display only, native compaction |
 | [`extensions/review-gate/`](extensions/review-gate/README.md) | Explicit `/review-change` authorization; latest-first API compatibility checks, scheduling restrictions documented |
 | `roles/literature-reviewer/` | Role skills (`research-ideas`) used by that extension |
@@ -91,39 +91,61 @@ instructions belong on that machine, not in shared configuration.
 | `bin/common.sh` | Cross-platform helpers: agent home, OS, python, venv layout, symlink test |
 | `bin/subagent-history.py` | CLI audit tool (`subagent-history`) tracking runs, token costs, and unused subagents |
 
-## Multiple OpenAI / ChatGPT accounts (same session)
+## Codex / ChatGPT accounts
 
-The repository provides the `multi-openai` extension (`extensions/multi-openai`),
-enabling multiple accounts using OpenAI's direct ChatGPT OAuth flow (`chatgpt.tokens.use.direct`
-on `https://api.openai.com/v1`). It is loaded automatically when extensions are linked.
+Codex is the standard OpenAI subscription route. Both personal and portable
+settings default to `openai-codex/gpt-6.1-sol`; configured agents use Codex,
+with Astra for review/coordinator roles and Sol for workers/leaves. Antigravity
+remains available. Pi subagents use `codex-auto/*` to select slots 1–3 by quota
+before new turns, retaining exact physical model/thinking. Continuations and
+retries remain pinned; no failed job is silently relaunched. The separate
+literature runner remains physically pinned. See the [routing contract and
+verification](extensions/multi-codex/README.md); project/per-run physical pins
+bypass automatic routing.
 
 Inside Pi:
 
-1. `/login openai`: authenticate Account #1 (primary `openai` provider).
-2. `/login openai-2`: authenticate Account #2. Open the OAuth link in a
-   Private/Incognito window or switch accounts in ChatGPT.
-3. `/openai-status`: view authenticated account emails, active slot, and token expiration.
-4. `/openai-switch`: switch the current model between authenticated accounts.
-5. `/openai-add`: enroll additional numbered slots (`openai-3`, `openai-4`, etc.).
-6. `/openai-remove <slot>`: remove credentials for a slot or unenroll an added slot (e.g. `/openai-remove 3`). Alternatively, use Pi's built-in `/logout` command.
+1. `/login openai-codex` authenticates the primary account if needed.
+2. `/codex-add` prepares the next secondary slot; `/login openai-codex-2`
+   signs in separately (use a private browser window).
+3. `/codex-status` lists account authentication; `/codex-switch` selects one.
+4. `/codex-auto-status refresh` checks all three slots and shows quota eligibility.
+5. `/subagents-models` confirms the reloaded Auto role assignments.
 
-If model scope is restricted (`enabledModels` or a scoped session), allow the
-numbered provider's exact model aliases as well, such as
-`openai-2/gpt-6.1-sol` and `openai-2/gpt-6-astra`.
+`enabledModels` includes Codex slots 1–3. Add exact model patterns for any
+additional slots. Credentials are machine-local; existing direct-OpenAI tokens
+are preserved, not migrated or reused as Codex credentials.
 
-The extension performs automatic HTTP 429 failover to the next available authenticated
-slot upon rate limiting. Credentials stay in local `auth.json` on each machine.
+The direct-OpenAI adapter is excluded with
+`"extensions": ["-extensions/multi-openai/index.ts"]`. Its source remains for
+legacy compatibility and helper imports by Codex/usage display. It does not
+register providers, commands or failover when excluded. Built-in `openai` is
+not removed from Pi itself. Fully restart Pi after changing provider adapters;
+resuming an old session may restore its old model—select Codex with `/model`.
+
+Codex standardization (researcher direction, 2026-10-04): offline checks cover
+configuration, numbered-slot child routing (including missing-adapter refusal),
+and Pi's real extension loader excluding direct-OpenAI while retaining Codex
+and usage discovery. `node --test tests/test-codex-standardization.mjs
+extensions/literature-reviewer/test-runner.mjs` passed 35 tests, none skipped.
+The full `./tests/run-tests.sh` suite passed all 39 checks; `git diff --check`
+was clean, and personal settings matched the Codex routing policy.
+Credential bytes were unchanged. Live provider and ACP behavior still require
+post-restart verification; there were no live model calls or account migrations.
 
 ## Usage display and compaction
 
 `/usage` shows captured limits and cached subscription observations. Codex usage
 is fetched only for the active Codex account, on interactive session/model
-selection (three-minute cache) or `/usage refresh` (forced refresh). No idle polling
-or background checks of other accounts. `/usage raw` shows the cached response.
+selection (three-minute cache) or `/usage refresh` (forced refresh). The display
+has no idle polling or background checks of other accounts. Separately, Auto
+routing checks all three slots on new routed turns (60-second instance-local
+cache); use `/codex-auto-status` for routing eligibility, not the display cache.
+`/usage raw` shows the display's cached response.
 Direct OpenAI subscription allowance remains unknown unless a request reports a
 quota block; API rate limits are not subscription allowance.
 
-Native compaction remains enabled as fallback. With the research runtime installed, billion-context owns routed conversations and cancels automatic threshold/overflow compaction only when it owns that conversation. Manual `/compact` remains user-owned. Without the proxy, Pi's native model-aware controller applies. The threshold/lifecycle details below describe that native fallback, not the proxy compression strategy.
+With the research runtime installed, standalone billion-context-pi rewrites context in-process and owns compression; version 0.1.83 cancels native compaction, including manual `/compact`, while active. Disable the context extension and fully restart Pi to use native compaction. The threshold/lifecycle details below describe Pi's native controller when ACP is not loaded, not ACP's model-driven compression strategy.
 It triggers above `model.contextWindow - compaction.reserveTokens` (default
 reserve: 16,384 tokens), using the selected model's catalog metadata instead of
 local fixed context caps. Output caps in `config/models.json` remain unchanged.
@@ -146,8 +168,8 @@ sessions may retain the old controller/model until then.
 
 ## Todo and long-context research runtime
 
-`packages/research-runtime` isolates pinned rpiv-todo 2.12.0 and billion-context
-0.1.182 dependencies from Pi's shared npm tree. After installing this setup, run
+`packages/research-runtime` isolates pinned rpiv-todo 2.12.0 and billion-context-pi
+0.1.83 dependencies from Pi's shared npm tree. After installing this setup, run
 in the **installed agent-home package**, so both copy and link installs work:
 
 ```bash
@@ -156,19 +178,20 @@ npm ci --prefix "${PI_CODING_AGENT_DIR:-${PI_AGENT_HOME:-$HOME/.pi/agent}}/packa
 
 For `--dest`, replace the prefix with that destination's `packages/research-runtime`.
 
-Restart Pi; `/todos` displays milestones and `/acp` reports proxy context.
-The local adapters use coarse tasks and disable background ordinary/advisory
-updates, release polling, auto-restart and certificate MITM. No alternate delegate
-or standalone billion-context-pi is installed. Credentials and reviewer routing
-remain unchanged. Method guidance stays in research-workflow; project markdown,
+Fully restart Pi; `/reload` cannot reliably clear the old proxy's process markers
+and fetch patches. `/todos` displays milestones and `/acp` reports in-process context.
+The local adapters use coarse tasks and disable ACP updates and delegate tools.
+Standalone billion-context-pi replaces the native proxy; no proxy or certificate
+MITM is used. `pi-subagents`, credentials and reviewer routing remain unchanged. Method guidance stays in research-workflow; project markdown,
 not task status or compressed summaries, is authoritative.
 
 SoL-Pi, including Action Fusion, is no longer loaded in normal runtime.
 A local `packages/sol-pi` snapshot may be retained for history; it is excluded
 from publication. All SoL-Pi features are off.
 See [runtime scope and limits](packages/research-runtime/README.md).
-Native SDK/loopback fixtures are not proof of real OAuth, WebSocket, image,
-child-routing, compression fidelity or scientific-performance compatibility.
+The bounded offline standalone fixture checks context projection and exact retrieval,
+not live-provider, image, child/fork/resume, summary-fidelity or performance compatibility.
+Live-session validation remains pending restart.
 
 ## Deliberately not packaged
 

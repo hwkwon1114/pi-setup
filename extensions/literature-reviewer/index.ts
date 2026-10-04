@@ -59,8 +59,8 @@ export default async function (pi: ExtensionAPI) {
       // retrieval workers use a lower-cost non-orchestrator model.
       const dispatchedDepth=depth+1;
       const model=dispatchedDepth===1
-        ? 'openai/gpt-6-astra'
-        : 'openai/gpt-6.1-sol';
+        ? 'openai-codex/gpt-6-astra'
+        : 'openai-codex/gpt-6.1-sol';
       const thinking=dispatchedDepth===1 ? 'xhigh' : 'medium';
       const effectiveRole = resolveRoleModel(agentDir, dispatchedDepth, model, thinking);
       const effectiveModel = effectiveRole.model;

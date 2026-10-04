@@ -19,8 +19,7 @@ export function resolveRoleModel(agentDir, depth, fallbackModel, fallbackThinkin
 
       if (typeof roleOverride?.model === 'string' && roleOverride.model.trim()) {
         model = roleOverride.model.trim();
-      } else if (cfg?.defaultProvider === 'openai' && fallbackModel.startsWith('openai-codex/')) {
-        model = fallbackModel.replace('openai-codex/', 'openai/').replace('gpt-6-sol', 'gpt-6.1-sol');
+
       }
 
       if (typeof roleOverride?.thinking === 'string' && roleOverride.thinking.trim()) {
@@ -49,8 +48,15 @@ export function buildArgs({ cli, extension, agentDir, promptFile, model, thinkin
   // Load the optional Antigravity provider without discovering unrelated extensions.
   const antigravity = path.join(agentDir,'npm','node_modules','pi-antigravity/src/index.ts');
   if (fs.existsSync(antigravity)) args.push('-e',antigravity);
-  // Load the multi-openai provider if an alias provider (e.g. openai-2) is selected.
+  // Isolated children need the Codex account adapter only for numbered slots.
   const provider = model.split('/')[0];
+  if (/^openai-codex-([2-9]|[1-9]\d+)$/.test(provider)) {
+    const multiCodex = path.join(agentDir, 'extensions', 'multi-codex', 'index.ts');
+    if (!fs.existsSync(multiCodex)) throw new Error('Missing Codex account adapter');
+    args.push('-e', multiCodex);
+  }
+  // Retain explicit legacy provider overrides; no default routes here.
+
   if (/^openai-\d+$/.test(provider)) {
     const multiOpenAI = path.join(agentDir, 'extensions', 'multi-openai', 'index.ts');
     if (fs.existsSync(multiOpenAI)) {

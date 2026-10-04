@@ -39,7 +39,7 @@ test('Codex alias delegates OAuth and rewrites model, history and result',async(
 });
 test('commands register Codex slot without editing auth or registering OpenAI aliases',async()=>{
   const {native}=fixture();const commands={},providers=[];
-  await multiCodex({registerProvider:p=>providers.push(p.id),on:()=>{},registerCommand:(n,c)=>commands[n]=c},native);
+  await multiCodex({registerProvider:p=>providers.push(p.id),registerVirtualModel:()=>{},on:()=>{},registerCommand:(n,c)=>commands[n]=c},native);
   assert.deepEqual(providers,['openai-codex-2']);
   let notice;
   await commands['codex-add'].handler('',{ui:{notify:s=>notice=s}});
@@ -51,7 +51,7 @@ test('stored slots are discovered without mutating fixture credentials', async()
     'openai-2':{type:'oauth',access:'fixture',accountId:'fixture'}});
   const path=join(agentDir,'auth.json');writeFileSync(path,auth);
   const {native}=fixture();const providers=[];
-  await multiCodex({registerProvider:p=>providers.push(p.id),on:()=>{},registerCommand:()=>{}},native);
+  await multiCodex({registerProvider:p=>providers.push(p.id),registerVirtualModel:()=>{},on:()=>{},registerCommand:()=>{}},native);
   assert.deepEqual(providers,['openai-codex-2','openai-codex-3']);
   assert.equal(readFileSync(path,'utf8'),auth);
 });

@@ -37,32 +37,36 @@ for p in list(root.glob('config/*.json'))+list(root.glob('optional/**/*.template
     except Exception as e: bad.append(f"invalid JSON {p}: {e}")
 try:
     providers=json.load(open(root/'config/models.json'))['providers']
-    if any(p.startswith('openai-codex') for p in providers): bad.append('obsolete Codex provider configuration')
-    for provider in ('openai','openai-2'):
+    if any(re.fullmatch(r'openai(?:-\d+)?', p) for p in providers): bad.append('direct OpenAI provider configuration is disabled')
+    for provider in ('openai-codex','openai-codex-2','openai-codex-3'):
         overrides=providers[provider]['modelOverrides']
         for model in ('gpt-6.1-sol','gpt-6-astra'):
             entry=overrides.get(model,{})
             if 'contextWindow' in entry or entry.get('maxTokens') != 32000:
                 bad.append(f'{provider} {model} must use catalog context and 32000 output cap')
         luna=overrides.get('gpt-6-luna',{})
-        if 'contextWindow' in luna or luna.get('maxTokens') != 24000:
-            bad.append(f'{provider} Luna must use catalog context and 24000 output cap')
+        if 'contextWindow' in luna or luna.get('maxTokens') != 32000:
+            bad.append(f'{provider} Luna must use catalog context and 32000 output cap')
     gemini=json.load(open(root/'config/models.json'))['providers']['antigravity']['modelOverrides'].get('gemini-3.8-flash',{})
     if 'contextWindow' in gemini or gemini.get('maxTokens') != 32000:
         bad.append('Gemini Flash must use catalog context and 32000 output cap')
     settings=json.load(open(root/'config/settings.json'))
+    if settings.get('defaultProvider') != 'openai-codex': bad.append('default provider must be Codex')
+    if '-extensions/multi-openai/index.ts' not in settings.get('extensions',[]): bad.append('direct OpenAI adapter must be excluded')
     enabled=set(settings.get('enabledModels',[]))
+    if any(re.match(r'openai(?:-\d+)?/', m) for m in enabled): bad.append('direct OpenAI models must not be enabled')
     roles=settings.get('subagents',{}).get('agentOverrides',{})
     role_targets = {
-        'worker': ('openai/gpt-6.1-sol',),
-        'scout': ('openai/gpt-6.1-sol',),
-        'researcher': ('openai/gpt-6.1-sol',),
-        'reviewer': ('openai/gpt-6-astra', 'openai-2/gpt-6-astra'),
-        'oracle': ('openai/gpt-6-astra',),
-        'evidence-auditor': ('openai/gpt-6-astra',),
-        'literature-coordinator': ('openai/gpt-6-astra',),
-        'literature-leaf': ('openai/gpt-6.1-sol',),
-        'literature-reviewer': ('openai/gpt-6-astra',),
+        'worker': ('codex-auto/gpt-6.1-sol',),
+        'scout': ('codex-auto/gpt-6.1-sol',),
+        'researcher': ('codex-auto/gpt-6.1-sol',),
+        'reviewer': ('codex-auto/gpt-6-astra',),
+        'astra-code-reviewer': ('codex-auto/gpt-6-astra',),
+        'oracle': ('codex-auto/gpt-6-astra',),
+        'evidence-auditor': ('codex-auto/gpt-6-astra',),
+        'literature-coordinator': ('openai-codex/gpt-6-astra',),
+        'literature-leaf': ('openai-codex/gpt-6.1-sol',),
+        'literature-reviewer': ('openai-codex/gpt-6-astra',),
     }
     for role, allowed in role_targets.items():
         actual = roles.get(role, {}).get('model')
