@@ -52,7 +52,7 @@ try:
         bad.append('Gemini Flash must use catalog context and 32000 output cap')
     settings=json.load(open(root/'config/settings.json'))
     if settings.get('defaultProvider') != 'openai-codex': bad.append('default provider must be Codex')
-    if '-extensions/multi-openai/index.ts' not in settings.get('extensions',[]): bad.append('direct OpenAI adapter must be excluded')
+    if (root/'extensions/multi-openai').exists(): bad.append('legacy multi-openai extension must be retired')
     enabled=set(settings.get('enabledModels',[]))
     if any(re.match(r'openai(?:-\d+)?/', m) for m in enabled): bad.append('direct OpenAI models must not be enabled')
     roles=settings.get('subagents',{}).get('agentOverrides',{})

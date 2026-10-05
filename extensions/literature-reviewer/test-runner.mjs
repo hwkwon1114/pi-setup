@@ -80,38 +80,16 @@ test('role model override dynamically resolves from settings.json or defaults', 
  assert.deepEqual(d6, { model: 'openai-codex/gpt-6-astra', thinking: 'medium' });
 });
 
-test('buildArgs loads multi-openai extension when model uses an alias provider', () => {
-  const root = temp();
-  try {
-    for (const n of ['research-ideas', 'pdf-read']) {
-      const d = n === 'research-ideas' ? path.join(root, 'roles', 'literature-reviewer', 'skills', n) : path.join(root, 'skills', n);
-      fs.mkdirSync(d, { recursive: true });
-      fs.writeFileSync(path.join(d, 'SKILL.md'), 'fixture');
-    }
-    const multiOpenAIPath = path.join(root, 'extensions', 'multi-openai', 'index.ts');
-    fs.mkdirSync(path.dirname(multiOpenAIPath), { recursive: true });
-    fs.writeFileSync(multiOpenAIPath, 'fixture');
-
-    const args1 = buildArgs({ cli: 'pi.js', extension: 'index.ts', agentDir: root, promptFile: 'role.md', model: 'openai-2/gpt-6-astra', depth: 1 });
-    assert.ok(args1.includes(multiOpenAIPath), 'multi-openai must be loaded for openai-2 model');
-
-    const args2 = buildArgs({ cli: 'pi.js', extension: 'index.ts', agentDir: root, promptFile: 'role.md', model: 'openai/gpt-6-astra', depth: 1 });
-    assert.ok(!args2.includes(multiOpenAIPath), 'multi-openai should not be explicitly added for native openai model');
-  } finally {
-    fs.rmSync(root, { recursive: true, force: true });
-  }
-});
 test('Codex numbered slots load only the Codex adapter and missing adapters fail closed', t => {
  const root=temp();t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
  for(const rel of ['roles/literature-reviewer/skills/research-ideas','skills/pdf-read']) {
   const dir=path.join(root,rel);fs.mkdirSync(dir,{recursive:true});fs.writeFileSync(path.join(dir,'SKILL.md'),'fixture');
  }
  const adapter=path.join(root,'extensions','multi-codex','index.ts');
- const legacy=path.join(root,'extensions','multi-openai','index.ts');
- for(const file of [adapter,legacy]) {fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,'fixture');}
+ fs.mkdirSync(path.dirname(adapter),{recursive:true});fs.writeFileSync(adapter,'fixture');
  for(const provider of ['openai-codex','openai-codex-2','openai-codex-3','openai-codex-10']) {
   const args=buildArgs({cli:'pi.js',extension:'index.ts',agentDir:root,promptFile:'role.md',model:provider+'/gpt-6-astra',depth:1});
-  assert.equal(args.includes(adapter),provider!=='openai-codex');assert(!args.includes(legacy));
+  assert.equal(args.includes(adapter),provider!=='openai-codex');
  }
  fs.rmSync(adapter);
  assert.throws(()=>buildArgs({cli:'pi.js',extension:'index.ts',agentDir:root,promptFile:'role.md',model:'openai-codex-2/gpt-6-astra',depth:1}),/Missing Codex account adapter/);

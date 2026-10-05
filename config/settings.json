@@ -6,9 +6,7 @@
   "warnings": {
     "anthropicExtraUsage": false
   },
-  "extensions": [
-    "-extensions/multi-openai/index.ts"
-  ],
+  "extensions": [],
   "packages": [
     "npm:pi-subagents@latest",
     "npm:pi-antigravity@latest",

@@ -82,8 +82,7 @@ instructions belong on that machine, not in shared configuration.
 | `skills/` | Research, analysis, visualization, editable diagrams and maintenance skills |
 | `agents/` | Astra code reviewer and literature-reviewer bridge definitions |
 | `extensions/literature-reviewer/` | `literature_review` delegation tool (Approach B: hybrid subagent integration & FleetView) |
-| [`extensions/multi-openai/`](extensions/multi-openai/README.md) | Legacy direct-OpenAI adapter, disabled by settings; retained for compatibility and shared helpers |
-| [`extensions/multi-codex/`](extensions/multi-codex/README.md) | Native Codex OAuth slots and quota-aware virtual routing: `/codex-add`, `/codex-status`, `/codex-switch`, `/codex-auto-status` |
+| [`extensions/multi-codex/`](extensions/multi-codex/README.md) | Native Codex OAuth slots, account status in footer and quota-aware virtual routing: `/codex-add`, `/codex-status`, `/codex-switch`, `/codex-auto-status` |
 | `extensions/usage-limits.ts` | `/usage`, response-header limits and active Codex usage; display only, native compaction |
 | `roles/literature-reviewer/` | Role skills (`research-ideas`) used by that extension |
 | `optional/mineru/` | Installer + pinned lockfile for the optional MinerU equation backend |
@@ -115,11 +114,9 @@ Inside Pi:
 additional slots. Credentials are machine-local; existing direct-OpenAI tokens
 are preserved, not migrated or reused as Codex credentials.
 
-The direct-OpenAI adapter is excluded with
-`"extensions": ["-extensions/multi-openai/index.ts"]`. Its source remains for
-legacy compatibility and helper imports by Codex/usage display. It does not
-register providers, commands or failover when excluded. Built-in `openai` is
-not removed from Pi itself. Fully restart Pi after changing provider adapters;
+The direct-OpenAI adapter has been fully retired; Codex is the exclusive
+route for ChatGPT accounts, and shared streaming/dir helpers live directly in
+`extensions/multi-codex/stream.ts`. Fully restart Pi after changing provider adapters;
 resuming an old session may restore its old model—select Codex with `/model`.
 
 Codex standardization (researcher direction, 2026-10-04): offline checks cover

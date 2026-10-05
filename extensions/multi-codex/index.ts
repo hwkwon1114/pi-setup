@@ -2,7 +2,8 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import type { Provider, Model, TranscriptContext } from "@earendil-works/pi-ai";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { aliasStream, getAgentDir } from "../multi-openai/index.ts";
+import { aliasStream, getAgentDir } from "./stream.ts";
+export { getAgentDir, aliasStream };
 import { createQuotaService, registerCodexRouter } from "./router.mjs";
 import { installAccountStatus } from "./account-status.mjs";
 

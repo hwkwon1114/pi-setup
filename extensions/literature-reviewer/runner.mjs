@@ -54,14 +54,7 @@ export function buildArgs({ cli, extension, agentDir, promptFile, model, thinkin
     if (!fs.existsSync(multiCodex)) throw new Error('Missing Codex account adapter');
     args.push('-e', multiCodex);
   }
-  // Retain explicit legacy provider overrides; no default routes here.
 
-  if (/^openai-\d+$/.test(provider)) {
-    const multiOpenAI = path.join(agentDir, 'extensions', 'multi-openai', 'index.ts');
-    if (fs.existsSync(multiOpenAI)) {
-      args.push('-e', multiOpenAI);
-    }
-  }
   for (const skill of ['research-ideas','pdf-read']) {
     const target = skill === 'research-ideas'
       ? path.join(agentDir,'roles','literature-reviewer','skills',skill,'SKILL.md')

@@ -12,7 +12,7 @@ test.after(() => {
   rmSync(agentDir, {recursive:true, force:true});
 });
 import multiCodex, {createCodexAlias} from './index.ts';
-import {createAssistantMessageEventStream} from '../multi-openai/index.ts';
+import {createAssistantMessageEventStream} from './stream.ts';
 function fixture() {
   const calls=[];
   const message={role:'assistant',provider:'openai-codex',model:'test',content:[],stopReason:'stop'};

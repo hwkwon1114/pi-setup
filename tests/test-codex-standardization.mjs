@@ -9,7 +9,7 @@ import { pathToFileURL } from 'node:url';
 const config=JSON.parse(fs.readFileSync(new URL('../config/settings.json',import.meta.url),'utf8'));
 test('portable routing standardizes on Codex without removing other providers',()=>{
  assert.equal(config.defaultProvider,'openai-codex');
- assert(config.extensions.includes('-extensions/multi-openai/index.ts'));
+ assert(!fs.existsSync(new URL('../extensions/multi-openai',import.meta.url)));
  assert(config.packages.includes('npm:pi-subagents@latest'));
  assert(config.packages.includes('npm:pi-antigravity@latest'));
  assert(config.enabledModels.includes('antigravity/gemini-3.8-flash'));
@@ -36,12 +36,12 @@ if(!piDir) try {
  }
 } catch {}
 const installed=piDir&&fs.existsSync(path.join(piDir,'dist/index.js'));
-test('installed Pi loader excludes legacy adapter but discovers Codex and usage extensions', {skip:!installed},async t=>{
+test('installed Pi loader discovers Codex and usage extensions', {skip:!installed},async t=>{
  const sdk=await import(pathToFileURL(path.join(piDir,'dist/index.js')).href);
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'pi-codex-discovery-'));
  t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
  const agentDir=path.join(root,'agent');fs.mkdirSync(agentDir);
- for(const [relative,command] of [['multi-openai/index.ts','legacy-command'],['multi-codex/index.ts','codex-command'],['usage-limits.ts','usage-command']]) {
+ for(const [relative,command] of [['multi-codex/index.ts','codex-command'],['usage-limits.ts','usage-command']]) {
   const target=path.join(agentDir,'extensions',relative);fs.mkdirSync(path.dirname(target),{recursive:true});
   fs.writeFileSync(target,`export default function(pi) { pi.registerCommand('${command}', {description:'offline fixture',handler:async()=>{}}); }`);
  }
@@ -52,5 +52,5 @@ test('installed Pi loader excludes legacy adapter but discovers Codex and usage 
  await loader.reload();
  const result=loader.getExtensions();assert.deepEqual(result.errors,[]);
  const commands=result.extensions.flatMap(extension=>[...extension.commands.keys()]);
- assert(!commands.includes('legacy-command'));assert(commands.includes('codex-command'));assert(commands.includes('usage-command'));
+ assert(commands.includes('codex-command'));assert(commands.includes('usage-command'));
 });

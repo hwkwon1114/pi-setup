@@ -13,7 +13,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { getAgentDir } from "./multi-openai/index.ts";
+import { getAgentDir } from "./multi-codex/stream.ts";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
