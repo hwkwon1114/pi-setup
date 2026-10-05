@@ -8,6 +8,7 @@ reused or removed. Fully restart Pi after changing this adapter.
   signs in separately (use a private browser window for each account).
 - `/codex-status` shows authentication; `/codex-switch` manually selects an account.
 - `/codex-auto-status [refresh]` shows quota eligibility; `refresh` bypasses cache.
+- The footer shows the active Codex account email (`Codex: user@example.com`), read locally from `auth.json` token claims; for `codex-auto` it follows the routed physical slot. Display only: no refresh, network request or credential write.
 
 ## Automatic subagent selection
 

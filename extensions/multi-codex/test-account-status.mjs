@@ -1,0 +1,40 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { accountEmail, installAccountStatus } from './account-status.mjs';
+const jwt = payload => `fixture.${Buffer.from(JSON.stringify(payload)).toString('base64url')}.fixture`;
+const credential = email => ({type:'oauth', access:jwt({'https://api.openai.com/profile':{email}})});
+test('email extraction never exposes tokens or malformed/control claims', () => {
+  assert.equal(accountEmail(credential('alice@example.org')), 'alice@example.org');
+  assert.equal(accountEmail({type:'oauth',access:jwt({email:'bob@example.org'})}), 'bob@example.org');
+  for (const email of ['alice\n@example.org', '\x1b[31malice@example.org', 'not-email', undefined]) assert.equal(accountEmail(credential(email)), undefined);
+  assert.equal(accountEmail({type:'api_key',key:'private'}), undefined);
+  assert.equal(accountEmail({type:'oauth',access:'broken'}), undefined);
+});
+test('physical aliases, automatic routing, model changes and credential changes update footer', () => {
+  const handlers={}, statuses=new Map();
+  const creds={'openai-codex':credential('alice@example.org'),'openai-codex-2':credential('bob@example.org')};
+  const before=JSON.stringify(creds);
+  const ctx={model:{provider:'openai-codex',id:'test'},ui:{setStatus:(k,v)=>statuses.set(k,v)},sessionManager:{getBranch:()=>[]}};
+  installAccountStatus({on:(name,fn)=>handlers[name]=fn},()=>creds);
+  handlers.session_start({},ctx);
+  assert.equal(statuses.get('codex-account'),'Codex: alice@example.org');
+  ctx.model.provider='codex-auto'; handlers.model_select({},ctx);
+  assert.equal(statuses.get('codex-account'),'Codex: account pending');
+  handlers.message_start({message:{role:'assistant',provider:'openai-codex-2'}},ctx);
+  assert.equal(statuses.get('codex-account'),'Codex: bob@example.org');
+  handlers.message_end({message:{role:'user'}},ctx);
+  assert.equal(statuses.get('codex-account'),'Codex: bob@example.org');
+  assert.equal(JSON.stringify(creds),before);
+  delete creds['openai-codex-2'];
+  handlers.message_end({message:{role:'assistant',provider:'openai-codex-2'}},ctx);
+  assert.equal(statuses.get('codex-account'),'Codex: email unavailable');
+  ctx.model.provider='other'; handlers.model_select({},ctx);
+  assert.equal(statuses.get('codex-account'),undefined);
+});
+test('auto resume restores last matching physical account from active branch',()=>{
+  const handlers={}; let status;
+  installAccountStatus({on:(name,fn)=>handlers[name]=fn},()=>({'openai-codex-3':credential('c@example.org')}));
+  const ctx={model:{provider:'codex-auto',id:'test'},ui:{setStatus:(_k,v)=>status=v},sessionManager:{getBranch:()=>[{message:{role:'assistant',provider:'openai-codex-3',model:'test'}}]}};
+  handlers.session_start({},ctx); assert.equal(status,'Codex: c@example.org');
+  handlers.session_shutdown({},ctx); assert.equal(status,undefined);
+});

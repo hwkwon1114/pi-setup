@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { isolatedMcpConfig, installChildMcp } from './native-mcp.mjs';
+import { isolatedMcpConfig, installChildMcp, childToolNames, registerChildToolLoadout } from './native-mcp.mjs';
 
  test('native MCP child config excludes ambient/project servers and retains timeout/scope', () => {
   const cfg = isolatedMcpConfig();
@@ -31,6 +31,24 @@ test('child installs codemode and isolated native MCP without starting OAuth/con
   assert.throws(() => mcpOptions.updateConfig({}, {}), /cannot change MCP configuration/);
 });
 
+test('child loadout keeps dynamic research MCP callable but blocks other roles and leaf delegation', () => {
+  for (const depth of [1, 2]) {
+    const handlers = new Map(), selections = [];
+    registerChildToolLoadout({ on: (name, fn) => handlers.set(name, fn), setActiveTools: names => selections.push(names) }, depth);
+    handlers.get('session_start')();
+    handlers.get('before_agent_start')();
+    assert.deepEqual(selections, [childToolNames(depth), childToolNames(depth)]);
+    const check = toolName => handlers.get('tool_call')({ toolName });
+    for (const name of [...childToolNames(depth), 'mcp__consensus__search', 'mcp__researchfasttrack__search',
+      'list_mcp_resources', 'list_mcp_resource_templates', 'read_mcp_resource']) assert.equal(check(name), undefined);
+    for (const name of ['mcp__zotero__write', 'mcp__consensus_other__search', 'subagent', 'powershell'])
+      assert.equal(check(name)?.block, true);
+    assert.equal(check('literature_review')?.block, depth === 2 ? true : undefined);
+  }
+  assert.throws(() => childToolNames(0), /Invalid literature child depth/);
+  assert.throws(() => childToolNames(3), /Invalid literature child depth/);
+});
+
 test('invalid run directory fails before registering MCP', async () => {
   await assert.rejects(installChildMcp({}, {}, 'relative'), /Invalid literature run directory/);
 });
@@ -38,7 +56,10 @@ test('invalid run directory fails before registering MCP', async () => {
 test('launcher uses codemode, not removed adapter gateway, while ambient extensions remain disabled', () => {
   const launcher = fs.readFileSync(new URL('runner.mjs', import.meta.url), 'utf8');
   const integration = fs.readFileSync(new URL('index.ts', import.meta.url), 'utf8');
-  assert.match(launcher, /'ls','codemode','literature_progress'/);
+  assert.doesNotMatch(launcher, /'--tools'/);
+  assert.equal(childToolNames(1).includes('literature_review'), true);
+  assert.equal(childToolNames(2).includes('literature_review'), false);
+  assert.match(integration, /registerChildToolLoadout\(pi, depth\)/);
   assert.match(launcher, /'--no-extensions'/);
   assert.match(integration, /await installChildMcp/);
   assert.doesNotMatch(integration, /pi-mcp-adapter|createMcpAdapter/);

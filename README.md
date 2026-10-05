@@ -85,7 +85,7 @@ instructions belong on that machine, not in shared configuration.
 | [`extensions/multi-openai/`](extensions/multi-openai/README.md) | Legacy direct-OpenAI adapter, disabled by settings; retained for compatibility and shared helpers |
 | [`extensions/multi-codex/`](extensions/multi-codex/README.md) | Native Codex OAuth slots and quota-aware virtual routing: `/codex-add`, `/codex-status`, `/codex-switch`, `/codex-auto-status` |
 | `extensions/usage-limits.ts` | `/usage`, response-header limits and active Codex usage; display only, native compaction |
-| [`extensions/review-gate/`](extensions/review-gate/README.md) | Explicit `/review-change` authorization; latest-first API compatibility checks, scheduling restrictions documented |
+| [`extensions/review-gate/`](extensions/review-gate/README.md) | Retired from active/portable loading at researcher request; reviews use normal authorized subagent dispatch; source/history retained |
 | `roles/literature-reviewer/` | Role skills (`research-ideas`) used by that extension |
 | `optional/mineru/` | Installer + pinned lockfile for the optional MinerU equation backend |
 | `bin/common.sh` | Cross-platform helpers: agent home, OS, python, venv layout, symlink test |

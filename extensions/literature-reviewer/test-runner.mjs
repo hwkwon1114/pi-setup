@@ -6,13 +6,14 @@ import path from 'node:path';
 import {depthFrom,buildArgs,runProcess,resolveRoleModel} from './runner.mjs';
 import {formatFailure} from './runtime.mjs';
 import {progressUpdate} from './progress.mjs';
+import {childToolNames} from './native-mcp.mjs';
 const temp=()=>fs.mkdtempSync(path.join(os.tmpdir(),'lit-reviewer-test-'));
 const emit="console.log(JSON.stringify({type:'message_end',message:{role:'assistant',content:[{type:'text',text:'fixture report'}],stopReason:'stop'}}));";
 test('depth validation',()=>{assert.equal(depthFrom({}),0);assert.equal(depthFrom({PI_LITERATURE_DEPTH:'2'}),2);for(const n of ['-1','3','abc','1.5'])assert.throws(()=>depthFrom({PI_LITERATURE_DEPTH:n}));});
 test('explicit role configuration and leaf tools',()=>{
  const root=temp();for(const n of ['research-ideas','pdf-read']){const d=n==='research-ideas'?path.join(root,'roles','literature-reviewer','skills',n):path.join(root,'skills',n);fs.mkdirSync(d,{recursive:true});fs.writeFileSync(path.join(d,'SKILL.md'),'fixture');}
  for(const file of ['@rahularya01/pi-cursor/dist/index.js','pi-antigravity/src/index.ts']) {const target=path.join(root,'npm','node_modules',file);fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,'fixture');}
- for(const depth of [1,2]) {const args=buildArgs({cli:'pi.js',extension:'index.ts',agentDir:root,promptFile:'role.md',model:'provider/model',depth});assert(args.includes('--no-extensions'));assert(args.includes('--no-skills'));assert(args.includes('--no-context-files'));assert.equal(args.filter(x=>x==='--skill').length,2);assert.equal(args[args.indexOf('--tools')+1].includes('literature_review'),depth===1);assert(!args.join(' ').includes('zotero'));assert(!args.join(' ').includes('pi-cursor'));assert(args.some(x=>x.endsWith('pi-antigravity/src/index.ts')));}
+ for(const depth of [1,2]) {const args=buildArgs({cli:'pi.js',extension:'index.ts',agentDir:root,promptFile:'role.md',model:'provider/model',depth});assert(args.includes('--no-extensions'));assert(args.includes('--no-skills'));assert(args.includes('--no-context-files'));assert.equal(args.filter(x=>x==='--skill').length,2);assert(!args.includes('--tools'));assert.equal(childToolNames(depth).includes('literature_review'),depth===1);assert(!args.join(' ').includes('zotero'));assert(!args.join(' ').includes('pi-cursor'));assert(args.some(x=>x.endsWith('pi-antigravity/src/index.ts')));}
  fs.rmSync(root,{recursive:true});
 });
 test('coordinator stays Astra/xhigh and leaves use Sol/medium',t=>{
@@ -30,7 +31,8 @@ test('coordinator stays Astra/xhigh and leaves use Sol/medium',t=>{
   const args=buildArgs({cli:'pi.js',extension:'index.ts',agentDir:root,promptFile:'role.md',depth,...selected});
   assert.equal(args[args.indexOf('--model')+1],model);
   assert.equal(args[args.indexOf('--thinking')+1],thinking);
-  assert.equal(args[args.indexOf('--tools')+1].split(',').includes('literature_review'),depth===1);
+  assert(!args.includes('--tools'));
+  assert.equal(childToolNames(depth).includes('literature_review'),depth===1);
  }
  assert.throws(()=>buildArgs({cli:'pi.js',agentDir:root,model:'openai/gpt-6.1-sol',thinking:'medium',depth:3}),/Delegation depth exceeded/);
  assert.match(source,/leaf retrieval reviewers use Sol medium/);

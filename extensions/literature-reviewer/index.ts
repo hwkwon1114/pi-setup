@@ -6,7 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildArgs, depthFrom, runProcess, resolveRoleModel, MAX_DEPTH } from './runner.mjs';
 import { progressUpdate } from './progress.mjs';
-import { installChildMcp } from './native-mcp.mjs';
+import { installChildMcp, registerChildToolLoadout } from './native-mcp.mjs';
 import { budgetFrom, planBudget, budgetNotice, registerBudgetHooks, formatFailure } from './runtime.mjs';
 
 export default async function (pi: ExtensionAPI) {
@@ -17,6 +17,7 @@ export default async function (pi: ExtensionAPI) {
   if (depth > 0) {
     if (!budget || (depth === 2 && budget.deadlineAt === null)) throw new Error('Missing or invalid role runtime budget');
     registerBudgetHooks(pi, budget);
+    registerChildToolLoadout(pi, depth);
     pi.registerTool({
       name:'literature_progress',label:'Review progress',
       description:'Publish a concise progress checkpoint at phase changes: current work, blockers, and optional cumulative paper counts. Counts are reviewer-reported, not independently audited. Do not include private source text.',

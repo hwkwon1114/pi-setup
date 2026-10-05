@@ -6,31 +6,36 @@
   "warnings": {
     "anthropicExtraUsage": false
   },
-  "extensions": ["-extensions/multi-openai/index.ts"],
+  "extensions": [
+    "-extensions/multi-openai/index.ts",
+    "-extensions/review-gate/index.ts"
+  ],
   "packages": [
     "npm:pi-subagents@latest",
     "npm:pi-antigravity@latest",
     "./packages/research-runtime"
   ],
   "enabledModels": [
-    "antigravity/gemini-3.8-flash",
-    "antigravity/claude-opus-4-6",
     "codex-auto/gpt-6.1-sol",
     "codex-auto/gpt-6-astra",
     "codex-auto/gpt-6-luna",
     "openai-codex/gpt-6.1-sol",
     "openai-codex/gpt-6-astra",
     "openai-codex/gpt-6-luna",
+    "openai-codex-2/gpt-6-luna",
     "openai-codex-2/gpt-6.1-sol",
     "openai-codex-2/gpt-6-astra",
-    "openai-codex-2/gpt-6-luna",
+    "openai-codex-3/gpt-6-luna",
     "openai-codex-3/gpt-6.1-sol",
     "openai-codex-3/gpt-6-astra",
-    "openai-codex-3/gpt-6-luna"
+    "antigravity/claude-opus-5-5",
+    "antigravity/gemini-3.8-flash"
   ],
   "subagents": {
     "defaultModel": "codex-auto/gpt-6.1-sol",
-    "defaultSubagentOnlyExtensions": ["~/.pi/agent/extensions/multi-codex/index.ts"],
+    "defaultSubagentOnlyExtensions": [
+      "~/.pi/agent/extensions/multi-codex/index.ts"
+    ],
     "agentOverrides": {
       "astra-code-reviewer": {
         "model": "codex-auto/gpt-6-astra"
@@ -88,6 +93,5 @@
         "thinking": "xhigh"
       }
     }
-  },
-  "deviceId": "32e61c94-ebdb-40e5-9730-f0e884facd1d"
+  }
 }

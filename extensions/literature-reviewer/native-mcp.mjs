@@ -1,5 +1,27 @@
 import path from 'node:path';
 
+// Select declarations without Pi's --tools allowlist, which also excludes dynamically
+// registered MCP tools from codemode. Only explicitly loaded role extensions remain.
+export function childToolNames(depth) {
+  if (depth !== 1 && depth !== 2) throw new Error('Invalid literature child depth');
+  const names = ['read', 'bash', 'write', 'edit', 'grep', 'find', 'ls', 'codemode', 'literature_progress'];
+  if (depth === 1) names.push('literature_review');
+  return names;
+}
+
+export function registerChildToolLoadout(pi, depth) {
+  const names = childToolNames(depth);
+  const allowed = new Set([...names, 'list_mcp_resources', 'list_mcp_resource_templates', 'read_mcp_resource']);
+  const select = () => { pi.setActiveTools(names); };
+  pi.on('session_start', select);
+  pi.on('before_agent_start', select);
+  // Also covers nested calls. This is a tool boundary, not a shell sandbox.
+  pi.on('tool_call', event => {
+    if (!allowed.has(event.toolName) && !/^mcp__(consensus|researchfasttrack)__/.test(event.toolName))
+      return { block: true, reason: `Tool outside literature-reviewer role: ${event.toolName}` };
+  });
+}
+
 // Deliberately never read global/project mcp.json: children get only these servers.
 export function isolatedMcpConfig() {
   return {

@@ -1,4 +1,6 @@
-# Explicit code review
+# Explicit code review — retired from default loading
+
+Researcher requested normal assigned reviews instead of command-only dispatch (2026-10-04). Active and portable settings now exclude `extensions/review-gate/index.ts`. Source/tests and historical records are retained, not deleted. Reload/restart is required to remove the already-loaded runtime ceiling. Reviews then use ordinary authorized `subagent` dispatch with the existing Astra profile; scientific pre-execution review requirements remain unchanged. The command-only behavior below describes the retained implementation, not the current preferred workflow.
 
 This extension owns reviewer-launch authorization, not testing methodology or scientific approval. It adds no AGENTS paragraph and no mandatory validator. Action Fusion is not loaded in normal runtime; optional tests can still cover an external SoL-Pi checkout.
 

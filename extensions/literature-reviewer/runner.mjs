@@ -39,11 +39,10 @@ export function depthFrom(env) {
 export function buildArgs({ cli, extension, agentDir, promptFile, model, thinking, depth }) {
   if (!model) throw new Error('A selected model is required');
   if (!Number.isInteger(depth) || depth < 1 || depth > MAX_DEPTH) throw new Error('Delegation depth exceeded');
-  const tools = ['read','bash','write','edit','grep','find','ls','codemode','literature_progress'];
-  if (depth < MAX_DEPTH) tools.push('literature_review');
+  // Child extension selects active tools; --tools would exclude dynamic MCP tools.
   const args = [cli,'--mode','json','-p','--no-session','--no-extensions','--no-skills',
     '--no-context-files','--no-prompt-templates','--no-themes','--no-approve',
-    '--tools',tools.join(','),'--model',model,'--append-system-prompt',promptFile,'-e',extension];
+    '--model',model,'--append-system-prompt',promptFile,'-e',extension];
   if (thinking) args.push('--thinking',thinking);
   // Load the optional Antigravity provider without discovering unrelated extensions.
   const antigravity = path.join(agentDir,'npm','node_modules','pi-antigravity/src/index.ts');

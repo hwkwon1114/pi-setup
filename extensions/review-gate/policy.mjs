@@ -52,7 +52,8 @@ export function installReviewGate(pi, { loadApi, runReview }) {
     cancel(); close(); generation++;
     try {
       api = await loadApi(); fallbackApi = undefined; failure = undefined; refresh(ctx);
-      ctx.ui.setStatus('review-gate', 'Code review: explicit /review-change');
+      // The gate remains active; omit its permanent footer label.
+      ctx.ui.setStatus('review-gate', undefined);
     } catch (error) {
       fallbackApi = error.capabilityApi || api || fallbackApi;
       api = undefined; failure = `Reviewer gate unavailable: ${error.message}`;

@@ -1,15 +1,5 @@
 {
   "providers": {
-    "antigravity": {
-      "modelOverrides": {
-        "gemini-3.8-flash": {
-          "maxTokens": 32000
-        },
-        "claude-opus-4-6": {
-          "maxTokens": 32000
-        }
-      }
-    },
     "openai-codex": {
       "modelOverrides": {
         "gpt-6.1-sol": {
@@ -19,6 +9,16 @@
           "maxTokens": 32000
         },
         "gpt-6-luna": {
+          "maxTokens": 32000
+        }
+      }
+    },
+    "antigravity": {
+      "modelOverrides": {
+        "gemini-3.8-flash": {
+          "maxTokens": 32000
+        },
+        "claude-opus-4-6": {
           "maxTokens": 32000
         }
       }

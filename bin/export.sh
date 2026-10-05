@@ -47,7 +47,7 @@ if [ "$DRY" = 0 ] && [ -f "$SRC/settings.json" ] && [ -n "$PY_CMD" ]; then
 import json, sys
 src, dst = sys.argv[1], sys.argv[2]
 s = json.load(open(src))
-for k in ("lastChangelogVersion",):
+for k in ("lastChangelogVersion", "deviceId"):
     s.pop(k, None)
 open(dst, "w").write(json.dumps(s, indent=2) + "\n")
 PY
