@@ -10,7 +10,7 @@ and provider/MCP configuration.
 git clone <this repo> ~/Documents/pi-setup
 cd ~/Documents/pi-setup
 ./bin/install.sh            # copy into ~/.pi/agent (anything replaced is backed up)
-./bin/install.sh --link     # or symlink skills/extensions/roles to this repo
+./bin/install.sh --link     # or symlink resources + AGENTS.md/models.json/mcp.json; git hooks sync settings.json
 ./bin/install.sh --dry-run  # preview
 ```
 
@@ -18,44 +18,44 @@ Target defaults to `$PI_AGENT_HOME`, else `~/.pi/agent`; override with `--dest=P
 
 ## Bidirectional updates across computers (recommended)
 
-Keep a permanent checkout on each computer. On an already configured machine:
+Keep a permanent checkout on each computer and link it into Pi:
 
 ```bash
 git clone https://github.com/hwkwon1114/pi-setup.git ~/pi-setup
 cd ~/pi-setup
-./bin/install.sh --link --resources-only --dry-run
-./bin/install.sh --link --resources-only
+./bin/install.sh --link --dry-run
+./bin/install.sh --link
 ```
 
-This links skills, extensions and roles to the checkout, backing up replaced
-resources while leaving all local configuration and credentials untouched.
-Compare existing resources before linking: reconcile any local-only changes into
-the checkout first. Do not move or delete the checkout after linking.
-Fresh machines should first review the configuration templates and use the full
-installer above; `--resources-only` does not configure providers or MCP dependencies.
-Do not also register these same resources with `pi install`: that can load them twice.
+This symlinks `skills/`, `extensions/`, `roles/`, `agents/`, `packages/` and
+`config/{AGENTS.md,models.json,mcp.json}` into the agent home, so `git pull`
+updates them directly; replaced files are backed up under `backups/`.
+`settings.json` cannot be a symlink (Pi rewrites it with machine-local
+`deviceId`/`lastChangelogVersion`), so it is copied and the installer adds
+`post-merge`/`post-rewrite` git hooks that run `bin/sync-settings.sh` after
+every pull: settings are re-applied with machine keys kept, missing links are
+recreated, and local unexported settings edits are reported rather than
+overwritten (`bin/sync-settings.sh --force` applies the repo version anyway).
+Credentials are never touched. Do not move or delete the checkout after
+linking, and do not also register these resources with `pi install`.
 
-Before editing on either computer:
+Day-to-day on either computer:
 
 ```bash
 cd ~/pi-setup
-git status                 # commit/reconcile existing work before pulling
-git pull --rebase
-# Edit linked resources, then run checks in an appropriate environment.
+git pull --rebase          # links update in place; hooks sync settings.json
+# edit linked resources directly (they live in this checkout), run checks
+./bin/export.sh            # only needed to capture settings.json changes made in Pi
 git diff
-git add <specific-files>   # replace with reviewed paths; never add secrets
-git commit -m "Describe the update"
-git push
+git add <specific-files>   # never add secrets
+git commit -m "Describe the update" && git push
 ```
 
-On the other computer, run `git pull --rebase`, then `/reload` in Pi. Restart Pi
-if the extension changes require it. Resolve Git conflicts explicitly; do not
-force-push or overwrite the other computer's changes. Review config changes
-separately: linked updates intentionally do not overwrite machine settings.
-
-If symlinks are unavailable, use `--resources-only` without `--link` to copy.
-Before pulling, reconcile local resource edits into the checkout and commit them;
-after pulling, rerun the copy installer. Never reinstall over unexported edits.
+Then `/reload` in Pi (restart if extensions changed). Resolve conflicts
+explicitly; do not force-push. `--resources-only` links only the directories
+and leaves all configuration alone. If symlinks are unavailable, install
+without `--link` (copy) and rerun the installer after each pull; reconcile
+local edits into the checkout first.
 
 ### Exporting an existing setup
 
@@ -85,7 +85,6 @@ instructions belong on that machine, not in shared configuration.
 | [`extensions/multi-openai/`](extensions/multi-openai/README.md) | Legacy direct-OpenAI adapter, disabled by settings; retained for compatibility and shared helpers |
 | [`extensions/multi-codex/`](extensions/multi-codex/README.md) | Native Codex OAuth slots and quota-aware virtual routing: `/codex-add`, `/codex-status`, `/codex-switch`, `/codex-auto-status` |
 | `extensions/usage-limits.ts` | `/usage`, response-header limits and active Codex usage; display only, native compaction |
-| [`extensions/review-gate/`](extensions/review-gate/README.md) | Retired from active/portable loading at researcher request; reviews use normal authorized subagent dispatch; source/history retained |
 | `roles/literature-reviewer/` | Role skills (`research-ideas`) used by that extension |
 | `optional/mineru/` | Installer + pinned lockfile for the optional MinerU equation backend |
 | `bin/common.sh` | Cross-platform helpers: agent home, OS, python, venv layout, symlink test |

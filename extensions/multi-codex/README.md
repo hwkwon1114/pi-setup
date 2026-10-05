@@ -50,9 +50,6 @@ physical models bypass automatic selection. External CLI agents and the separate
 `literature_review` runner are unchanged. The main session remains on its
 manually selected physical account unless you select an Auto model with `/model`.
 
-The explicit `/review-change` owner also loads this adapter so its virtual
-catalog is available before child model resolution. Review admission/ceilings
-and project approval rules are unchanged; completion is not execution approval.
 Fast/priority mode is not supported with these virtual models.
 
 ## Verification (2026-10-04)

@@ -7,8 +7,7 @@
     "anthropicExtraUsage": false
   },
   "extensions": [
-    "-extensions/multi-openai/index.ts",
-    "-extensions/review-gate/index.ts"
+    "-extensions/multi-openai/index.ts"
   ],
   "packages": [
     "npm:pi-subagents@latest",

@@ -4,7 +4,8 @@
 # shell pi itself uses on Windows).
 #
 #   ./bin/install.sh            # copy files (backs up anything replaced)
-#   ./bin/install.sh --link     # symlink skills/extensions/roles instead of copying
+#   ./bin/install.sh --link     # symlink resources and AGENTS.md/models.json/mcp.json;
+#                               # settings.json is copied and re-synced by git hooks on pull
 #   ./bin/install.sh --dry-run  # show what would change
 #
 # Never touches credentials or state: auth.json, models-store.json, mcp-cache.json,
@@ -25,7 +26,7 @@ for arg in "$@"; do
     --resources-only) RESOURCES_ONLY=1 ;;
     --dry-run) DRY=1 ;;
     --dest=*) DST="${arg#--dest=}" ;;
-    -h|--help) sed -n '2,10p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,12p' "$0"; exit 0 ;;
     *) echo "unknown option: $arg" >&2; exit 2 ;;
   esac
 done
@@ -55,35 +56,60 @@ fi
 say "pi setup: $REPO -> $DST  (os=$OS, mode=$MODE, dry-run=$DRY)"
 run mkdir -p "$DST"
 
-# --- shared instructions and config files -------------------------------------
-for f in AGENTS.md settings.json models.json mcp.json; do
-  [ "$RESOURCES_ONLY" = 1 ] && continue
-  src="$REPO/config/$f"
-  [ -f "$src" ] || continue
-  if [ -e "$DST/$f" ] && cmp -s "$src" "$DST/$f"; then
-    say "= $f (unchanged)"
-    continue
+# shellcheck source=link-targets.sh
+. "$REPO/bin/link-targets.sh"
+
+link_or_copy() { # $1 = repo path, $2 = name in DST
+  local src="$REPO/$1" dst="$DST/$2"
+  [ -e "$src" ] || return 0
+  if [ "$MODE" = link ]; then
+    if [ -L "$dst" ] && [ "$(readlink "$dst")" = "$src" ]; then
+      say "= $2 (already linked)"; return 0
+    fi
+    backup "$dst"
+    run ln -s "$src" "$dst"
+  else
+    if [ -f "$src" ] && [ -f "$dst" ] && [ ! -L "$dst" ] && cmp -s "$src" "$dst"; then
+      say "= $2 (unchanged)"; return 0
+    fi
+    backup "$dst"
+    run cp -R "$src" "$dst"
   fi
-  backup "$DST/$f"
-  run cp "$src" "$DST/$f"
-  say "+ $f"
-done
+  say "+ $2 ($MODE)"
+}
+
+# --- shared instructions and config files -------------------------------------
+if [ "$RESOURCES_ONLY" = 0 ]; then
+  for rel in "${PI_LINK_FILES[@]}"; do link_or_copy "$rel" "${rel##*/}"; done
+  # settings.json is always copied: pi writes machine keys (deviceId) into it.
+  PY_CMD="$(pi_python || true)"
+  if [ "$DRY" = 1 ]; then
+    say "  would: sync settings.json (machine keys kept, live copy backed up)"
+  elif [ -n "$PY_CMD" ]; then
+    $PY_CMD "$REPO/bin/sync-settings.py" "$REPO/config/settings.json" "$DST/settings.json" --force
+  else
+    backup "$DST/settings.json"; cp "$REPO/config/settings.json" "$DST/settings.json"; say "+ settings.json"
+  fi
+fi
 
 # --- directory payloads --------------------------------------------------------
-for d in skills extensions roles agents packages; do
-  [ -d "$REPO/$d" ] || continue
-  if [ "$MODE" = link ] && [ -L "$DST/$d" ] && [ "$(readlink "$DST/$d")" = "$REPO/$d" ]; then
-    say "= $d/ (already linked)"
-    continue
-  fi
-  backup "$DST/$d"
-  if [ "$MODE" = link ]; then
-    run ln -s "$REPO/$d" "$DST/$d"
-  else
-    run cp -R "$REPO/$d" "$DST/$d"
-  fi
-  say "+ $d/ ($MODE)"
-done
+for d in "${PI_LINK_DIRS[@]}"; do link_or_copy "$d" "$d"; done
+
+# --- git hooks: `git pull` re-syncs settings.json and relinks missing links -----
+if [ "$MODE" = link ] && [ "$RESOURCES_ONLY" = 0 ] && [ -z "${PI_SETUP_NO_HOOKS:-}" ] && HOOKS="$(git -C "$REPO" rev-parse --git-path hooks 2>/dev/null)"; then
+  case "$HOOKS" in /*) ;; *) HOOKS="$REPO/$HOOKS" ;; esac
+  for h in post-merge post-rewrite; do
+    if [ -e "$HOOKS/$h" ] && ! grep -q 'pi-setup sync hook' "$HOOKS/$h"; then
+      say "! $HOOKS/$h exists and is not ours; not replaced (add: bin/sync-settings.sh --hook)"
+      continue
+    fi
+    if [ "$DRY" = 1 ]; then say "  would: install git hook $h"; continue; fi
+    mkdir -p "$HOOKS"
+    printf '#!/bin/sh\n# pi-setup sync hook (installed by bin/install.sh --link)\nexec "%s/bin/sync-settings.sh" --hook "--dest=%s"\n' "$REPO" "$DST" > "$HOOKS/$h"
+    chmod +x "$HOOKS/$h"
+    say "+ git hook $h"
+  done
+fi
 
 [ -d "$BACKUP" ] && say "replaced files backed up in $BACKUP"
 

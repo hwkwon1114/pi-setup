@@ -12,5 +12,4 @@ node_modules/
 
 # Local historical source and machine-specific check receipts stay on disk.
 /packages/sol-pi/
-/extensions/review-gate/checks/
 /tests/usage-compaction/checks/

@@ -123,6 +123,21 @@ printf 'local instructions\n' > "$L/AGENTS.md"
 if pi_symlinks_work; then
   check "resource-only links preserve config" "./bin/install.sh --link --resources-only --dest='$L' && [ -L '$L/skills' ] && [ -L '$L/extensions' ] && [ -L '$L/roles' ] && grep -qx 'local settings' '$L/settings.json' && grep -qx 'local instructions' '$L/AGENTS.md' && [ ! -e '$L/models.json' ]"
   check "linked rerun needs no backup" "./bin/install.sh --link --resources-only --dest='$L' && [ ! -e '$L/backups' ]"
+  F="$T/full-linked-agent"; mkdir -p "$F"
+  printf '{"deviceId":"dev-1","theme":"local"}\n' > "$F/settings.json"
+  check "full link install links config files" "PI_SETUP_NO_HOOKS=1 ./bin/install.sh --link --dest='$F' && [ -L '$F/AGENTS.md' ] && [ -L '$F/models.json' ] && [ -L '$F/mcp.json' ] && [ -L '$F/packages' ] && [ ! -L '$F/settings.json' ]"
+  check "linked settings keep machine keys" "\"$PY\" -c 'import json,sys; a=json.load(open(sys.argv[1])); b=json.load(open(sys.argv[2])); a.pop(\"deviceId\"); assert a==b' '$F/settings.json' config/settings.json && grep -q dev-1 '$F/settings.json'"
+  check "sync relinks a missing link" "rm '$F/AGENTS.md' && ./bin/sync-settings.sh --dest='$F' && [ -L '$F/AGENTS.md' ]"
+  check "full linked rerun is idempotent" "PI_SETUP_NO_HOOKS=1 ./bin/install.sh --link --dest='$F' > '$T/relink.out' && grep -q 'AGENTS.md (already linked)' '$T/relink.out' && grep -q 'settings.json (in sync)' '$T/relink.out'"
+fi
+if [ -n "$PY" ]; then
+  P="$T/sync"; mkdir -p "$P"
+  printf '{"theme":"a"}\n' > "$P/base.json"; printf '{"theme":"b"}\n' > "$P/repo.json"
+  printf '{"theme":"a","deviceId":"d"}\n' > "$P/live.json"
+  check "settings sync applies when live matches base" "\"$PY\" bin/sync-settings.py '$P/repo.json' '$P/live.json' --base '$P/base.json' && grep -q '\"b\"' '$P/live.json' && grep -q '\"d\"' '$P/live.json'"
+  printf '{"theme":"local","deviceId":"d"}\n' > "$P/live.json"
+  check "settings sync keeps local edits" "\"$PY\" bin/sync-settings.py '$P/repo.json' '$P/live.json' --base '$P/base.json'; [ \$? -eq 3 ] && grep -q local '$P/live.json'"
+  check "settings sync --force overrides" "\"$PY\" bin/sync-settings.py '$P/repo.json' '$P/live.json' --force && grep -q '\"b\"' '$P/live.json' && ls '$P'/backups/settings-*.json"
 fi
 check "export dry-run" "PI_CODING_AGENT_DIR='$T' ./bin/export.sh --dry-run"
 check "no export stage leftovers" "[ -z \"\$(ls -d '$REPO'/.export-stage-* 2>/dev/null)\" ]"

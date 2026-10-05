@@ -35,9 +35,12 @@ for d in skills extensions roles agents; do
   echo "+ $d/"
 done
 
-run cp "$SRC/AGENTS.md" "$REPO/config/AGENTS.md"
-for f in models.json mcp.json; do
-  [ -f "$SRC/$f" ] && run cp "$SRC/$f" "$REPO/config/$f"
+for f in AGENTS.md models.json mcp.json; do
+  [ -f "$SRC/$f" ] || continue
+  if [ -L "$SRC/$f" ] && [ "$(readlink "$SRC/$f")" = "$REPO/config/$f" ]; then
+    echo "= $f (symlinked to repo)"; continue
+  fi
+  run cp "$SRC/$f" "$REPO/config/$f"
 done
 
 # settings.json minus machine-local bookkeeping
