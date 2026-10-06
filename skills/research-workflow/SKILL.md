@@ -54,7 +54,7 @@ Literature routing, reviewer authorization and execution permissions remain with
 
 ## Synthesize and hand off
 
-Separate source statements, observations, derivations, interpretations and proposals. Preserve provenance, disagreements, failures, negative outcomes and unresolved limits. Reuse working runners and schemas; do not add infrastructure without a demonstrated need.
+Separate source statements, observations, derivations, interpretations and proposals. Preserve provenance, disagreements, failures, negative outcomes and unresolved limits. Reuse working runners and schemas; do not add infrastructure without a demonstrated need. In particular, never invent distributed cluster harnesses (POSIX file locks, crash-gap watermarks, pre-update atomic ledgers, micro-second profiling envelopes) for fast local benchmarks or toy ODEs (< 15 min runtime). Focus on the scientific question, not cluster DevOps.
 
 Explain what changed, what was actually checked, what the evidence supports and the next useful action. Proposed, implemented, tested, launched, execution-complete and scientifically reviewed are distinct states. Check artifacts and current job state before reporting progress; a plan, empty tool return or successful render is not verification.
 
