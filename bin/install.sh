@@ -4,8 +4,8 @@
 # shell pi itself uses on Windows).
 #
 #   ./bin/install.sh            # copy files (backs up anything replaced)
-#   ./bin/install.sh --link     # symlink resources and AGENTS.md/models.json/mcp.json;
-#                               # settings.json is copied and re-synced by git hooks on pull
+#   ./bin/install.sh --link     # link resources/instructions; compose local JSON
+#                               # configuration from defaults + private overrides
 #   ./bin/install.sh --dry-run  # show what would change
 #
 # Never touches credentials or state: auth.json, models-store.json, mcp-cache.json,
@@ -80,16 +80,15 @@ link_or_copy() { # $1 = repo path, $2 = name in DST
 
 # --- shared instructions and config files -------------------------------------
 if [ "$RESOURCES_ONLY" = 0 ]; then
-  for rel in "${PI_LINK_FILES[@]}"; do link_or_copy "$rel" "${rel##*/}"; done
-  # settings.json is always copied: pi writes machine keys (deviceId) into it.
   PY_CMD="$(pi_python || true)"
   if [ "$DRY" = 1 ]; then
-    say "  would: sync settings.json (machine keys kept, live copy backed up)"
+    say "  would: compose JSON defaults + local-config overrides (refuse unrecorded edits)"
   elif [ -n "$PY_CMD" ]; then
-    $PY_CMD "$REPO/bin/sync-settings.py" "$REPO/config/settings.json" "$DST/settings.json" --force
+    $PY_CMD "$REPO/bin/sync-settings.py" "$REPO/config" "$DST"
   else
-    backup "$DST/settings.json"; cp "$REPO/config/settings.json" "$DST/settings.json"; say "+ settings.json"
+    say "error: Python 3 required for safe configuration composition" >&2; exit 1
   fi
+  for rel in "${PI_LINK_FILES[@]}"; do link_or_copy "$rel" "${rel##*/}"; done
 fi
 
 # --- directory payloads --------------------------------------------------------

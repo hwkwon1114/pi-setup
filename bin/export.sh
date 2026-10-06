@@ -35,7 +35,9 @@ for d in skills extensions roles agents; do
   echo "+ $d/"
 done
 
-for f in AGENTS.md models.json mcp.json; do
+# JSON is deliberately never exported: it contains machine-local overrides.
+# Promote portable preferences by editing config/*.json explicitly.
+for f in AGENTS.md; do
   [ -f "$SRC/$f" ] || continue
   if [ -L "$SRC/$f" ] && [ "$(readlink "$SRC/$f")" = "$REPO/config/$f" ]; then
     echo "= $f (symlinked to repo)"; continue
@@ -43,22 +45,7 @@ for f in AGENTS.md models.json mcp.json; do
   run cp "$SRC/$f" "$REPO/config/$f"
 done
 
-# settings.json minus machine-local bookkeeping
-PY_CMD="$(pi_python || true)"
-if [ "$DRY" = 0 ] && [ -f "$SRC/settings.json" ] && [ -n "$PY_CMD" ]; then
-  $PY_CMD - "$SRC/settings.json" "$REPO/config/settings.json" <<'PY'
-import json, sys
-src, dst = sys.argv[1], sys.argv[2]
-s = json.load(open(src))
-for k in ("lastChangelogVersion", "deviceId"):
-    s.pop(k, None)
-open(dst, "w").write(json.dumps(s, indent=2) + "\n")
-PY
-elif [ "$DRY" = 0 ] && [ -f "$SRC/settings.json" ]; then
-  echo "! no python3 found: copying settings.json verbatim; remove lastChangelogVersion by hand" >&2
-  cp "$SRC/settings.json" "$REPO/config/settings.json"
-fi
-echo "+ config/"
+echo '= settings/models/MCP kept private; edit shared config/*.json explicitly'
 
 run find "$REPO" -name '.DS_Store' -delete
 run rm -rf "$REPO"/.export-stage-*

@@ -9,6 +9,8 @@ trust.json
 sessions/
 literature-review-runs/
 node_modules/
+local-config/
+__pycache__/
 
 # Local historical source and machine-specific check receipts stay on disk.
 /packages/sol-pi/

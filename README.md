@@ -10,11 +10,11 @@ and provider/MCP configuration.
 git clone <this repo> ~/Documents/pi-setup
 cd ~/Documents/pi-setup
 ./bin/install.sh            # copy into ~/.pi/agent (anything replaced is backed up)
-./bin/install.sh --link     # or symlink resources + AGENTS.md/models.json/mcp.json; git hooks sync settings.json
+./bin/install.sh --link     # link resources/instructions; compose private JSON configuration
 ./bin/install.sh --dry-run  # preview
 ```
 
-Target defaults to `$PI_AGENT_HOME`, else `~/.pi/agent`; override with `--dest=PATH`.
+Target defaults to `$PI_CODING_AGENT_DIR`, then `$PI_AGENT_HOME`, else `~/.pi/agent`; override with `--dest=PATH`. Python 3 is required for full configuration installation.
 
 ## Bidirectional updates across computers (recommended)
 
@@ -28,24 +28,31 @@ cd ~/pi-setup
 ```
 
 This symlinks `skills/`, `extensions/`, `roles/`, `agents/`, `packages/` and
-`config/{AGENTS.md,models.json,mcp.json}` into the agent home, so `git pull`
-updates them directly; replaced files are backed up under `backups/`.
-`settings.json` cannot be a symlink (Pi rewrites it with machine-local
-`deviceId`/`lastChangelogVersion`), so it is copied and the installer adds
-`post-merge`/`post-rewrite` git hooks that run `bin/sync-settings.sh` after
-every pull: settings are re-applied with machine keys kept, missing links are
-recreated, and local unexported settings edits are reported rather than
-overwritten (`bin/sync-settings.sh --force` applies the repo version anyway).
-Credentials are never touched. Do not move or delete the checkout after
-linking, and do not also register these resources with `pi install`.
+`config/AGENTS.md`; pulls update these portable resources directly. JSON files
+are **not linked**. The installer composes local `settings.json`, `models.json`
+and `mcp.json` from shared `config/` defaults plus private
+`<agent-home>/local-config/` overrides. See [configuration layering](docs/configuration-sharing.md).
+
+Put shell paths, executable arguments, environment variables, proxy settings,
+local endpoints and machine-only preferences in those private override files.
+Nested objects merge, arrays replace, and `null` removes a default key.
+Device/changelog fields stay local automatically. Live Pi/UI edits refuse the
+next sync rather than disappearing: `bin/sync-settings.sh --capture-local`
+explicitly records them as private overrides. To share a preference, edit the
+corresponding `config/*.json` directly; JSON is never exported automatically.
+
+Full linked installs add `post-merge`/`post-rewrite` hooks to compose configuration
+after pulls/rebases, without bypassing local-edit checks. Copy installs require
+manual sync/reinstallation. Credentials are never touched. Do not move/delete
+the checkout or also register the same resources with `pi install`.
 
 Day-to-day on either computer:
 
 ```bash
 cd ~/pi-setup
-git pull --rebase          # links update in place; hooks sync settings.json
-# edit linked resources directly (they live in this checkout), run checks
-./bin/export.sh            # only needed to capture settings.json changes made in Pi
+git pull --rebase          # linked resources update; hooks compose private JSON
+# edit portable config/*.json or linked resources directly; run checks
+./bin/sync-settings.sh     # apply shared defaults + this machine's overrides
 git diff
 git add <specific-files>   # never add secrets
 git commit -m "Describe the update" && git push
@@ -64,9 +71,10 @@ local edits into the checkout first.
 ./bin/export.sh             # ~/.pi/agent -> this repo, then review git diff
 ```
 
-Export replaces resource directories and copies configuration; it is not a merge
-or a secret scrubber. Avoid it for routine linked updates. Review configuration
-for credentials, local paths and computer-specific preferences before committing.
+Export replaces resource directories and copies portable instructions; it is not
+a merge or a secret scrubber. It never copies settings/models/MCP JSON or
+`local-config/`. Promote individual portable preferences in `config/*.json`
+explicitly; review changes for credentials and machine paths before committing.
 Keep authentication, session data and research files out of this repository.
 Cluster helpers (such as Quest's `srun-here`), scheduler defaults and cluster-specific
 instructions belong on that machine, not in shared configuration.
@@ -181,9 +189,8 @@ Standalone billion-context-pi replaces the native proxy; no proxy or certificate
 MITM is used. `pi-subagents`, credentials and reviewer routing remain unchanged. Method guidance stays in research-workflow; project markdown,
 not task status or compressed summaries, is authoritative.
 
-SoL-Pi, including Action Fusion, is no longer loaded in normal runtime.
-A local `packages/sol-pi` snapshot may be retained for history; it is excluded
-from publication. All SoL-Pi features are off.
+The active research runtime contains only the standalone context manager and
+todo integration; no legacy proxy or Action Fusion package is installed.
 See [runtime scope and limits](packages/research-runtime/README.md).
 The bounded offline standalone fixture checks context projection and exact retrieval,
 not live-provider, image, child/fork/resume, summary-fidelity or performance compatibility.

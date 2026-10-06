@@ -1,5 +1,4 @@
-# Resources that a linked install symlinks into the pi agent home.
-# Paths are relative to the repo; the link name is the basename.
-# settings.json is deliberately absent: pi writes machine keys into it.
+# Only portable resources/instructions are linked. JSON configuration is generated
+# locally from shared defaults + private local-config overrides.
 PI_LINK_DIRS=(skills extensions roles agents packages)
-PI_LINK_FILES=(config/AGENTS.md config/models.json config/mcp.json)
+PI_LINK_FILES=(config/AGENTS.md)

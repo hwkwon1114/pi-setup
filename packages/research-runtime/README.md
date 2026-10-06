@@ -11,9 +11,19 @@ Pi supplies SDK/TypeBox peers. Optional image dependencies are omitted; images a
 todo.ts changes only prompt guidance: coarse milestones, qualified completion, markdown authority and restoration. Upstream todo state/UI/replay remain intact.
 context.ts loads the standalone in-process context extension with `delegate: false` and `autoUpdate: false`, also setting `ACP_AUTO_UPDATE=0`. No proxy, fetch interception, certificate MITM, credential change or provider/model change is needed. `pi-subagents` remains the only delegation mechanism. No `/acp-subagents` settings writes have been performed; child compatibility is not yet validated. User/project `acp.json` can override adapter defaults; do not enable ACP delegation there.
 
-**Fully restart Pi after replacing the proxy integration.** `/reload` alone is unsuitable because the old process can retain proxy environment markers and fetch patches, causing standalone ACP to stand down. `/todos` shows tasks; `/acp` shows in-process context state. Compression remains model-driven, not guaranteed automatic summarization. The installed standalone version cancels `session_before_compact` while active, including manual compaction; the old proxy's ownership-gated native fallback/manual behavior does not apply. Disable the extension and restart to use Pi's native compaction. SoL-Pi and Action Fusion remain off.
+**Fully restart Pi after replacing the proxy integration.** `/reload` alone is unsuitable because the old process can retain proxy environment markers and fetch patches, causing standalone ACP to stand down. `/todos` shows tasks; `/acp` shows in-process context state. Compression remains model-driven, not guaranteed automatic summarization. The installed standalone version cancels `session_before_compact` while active, including manual compaction; the old proxy's ownership-gated native fallback/manual behavior does not apply. Disable the extension and restart to use Pi's native compaction.
 
 Use research-workflow's research-control guide for methods. These tools do not authorize reviewers, release tests, reset budgets or establish scientific validity.
+
+## Legacy cleanup (2026-10-05)
+
+No SoL-Pi package directory, shared npm dependency, active configuration entry,
+or tracked executable-source reference was found in the inspected local setup.
+Removed stale snapshot guidance; preserved historical test reports and the
+ignore rule preventing accidental reintroduction of an old snapshot. No package
+uninstall or file deletion was needed. Standalone ACP/todo and pi-subagents are
+unchanged. This disk inspection does not prove old code is absent from an
+already-running process; fully restart Pi after the earlier extension removals.
 
 ## Verification and limits
 
