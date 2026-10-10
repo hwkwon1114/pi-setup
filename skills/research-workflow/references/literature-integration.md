@@ -12,6 +12,24 @@ For an update, explicitly pass this contract:
 
 Respect project-specific proposal-only/catalog-write restrictions: when integration is coordinator-owned, the reviewer returns proposed deltas rather than editing canonical records.
 
+## Handoff to method selection
+
+When the review is intended to guide experiments, include a short ranked shortlist
+in the existing review: method and source/code availability; relevant assumptions
+and observation requirements; source-faithful versus adapted implementation;
+evidence-backed limitation or gap; and the smallest comparison that could change
+the researcher's decision. Distinguish a literature gap from an untested project
+hypothesis and metadata-only leads from inspected evidence. Explain what positive,
+negative or unresolved outcomes would mean; no fixed number of candidates is needed.
+
+The researcher chooses the investigation or explicitly delegates selection within
+stated scope. A review recommendation alone is not execution permission. Once the
+investigation is authorized, the coordinator owns implementation, focused checks,
+independent review, blocker repairs, execution and reporting within that scope;
+there is no approval stop after each substep. Reuse the current investigation note
+for permitted refinements, actual resource limits and final-test policy rather than
+creating another catalog or approval system.
+
 ## Integrate and verify
 
 First verify that the delegation returned a usable report or recoverable artifact and inspect it. An empty response has unknown outcome, not verified completion: report the blocker, use supported status/artifact recovery if available, and do not silently substitute an in-main review or launch duplicate work. Keep the review partial until its evidence is recovered and integrated.

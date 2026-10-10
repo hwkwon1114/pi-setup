@@ -93,8 +93,9 @@ tests outside the declared policy. Use the training/checkpoint checklist when
 applicable; it comes after relevance, not instead of it.
 
 Small, explicitly bounded correctness fixtures and quick edits follow the
-host's lightweight-check exception. Declare their ceiling before execution;
-repetition must not become an unreviewed training campaign.
+host's lightweight-check exception. Declare their scope and practical resource
+safeguards before execution, not arbitrary call/retry quotas; repetition must
+not become an unreviewed training campaign.
 
 ## Handoffs and completion
 

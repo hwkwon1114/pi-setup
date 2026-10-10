@@ -10,9 +10,10 @@ Keep scientific settings separate from operational settings. Different hardware,
 
 ## Budget and finalization
 
-- Declare separate per-fit and aggregate CPU/wall ceilings, cumulative charges for prior work, and time reserved for checkpoint finalization and reporting. Reserve **both CPU and wall time** before assigning training allowances/deadlines; unused CPU does not extend an expired wall ceiling. Keep concrete amounts in the experiment plan.
-- Check coordinator control flow, not just reserve arithmetic: reaching the training allowance must stop launching fits and route to authorized finalization/reporting within the remaining total budget, including a partial-cohort report when needed. A loop break must not silently skip that phase. Reporting cannot authorize retries, missing fits or sealed-test access.
-- In runner regression tests, exercise normal completion, training-allowance exhaustion with reporting time left, and exhausted total budget or worker failure. Verify the intended reporting/failure path, preserved partial artifacts, no completed-cell replay, and no ceiling reset. If reporting cannot finish, retain its partial status and blocker. Documentation is not an executed runner test.
+- Honor actual researcher/cluster allocations and estimate material total cost. Do not invent per-fit/aggregate CPU or wall deadlines, retry quotas or a budget-management framework when no concrete constraint requires them. Retain memory/device protection, scientific stopping and risk-appropriate process monitoring.
+- When real CPU/wall deadlines apply, account for prior consumption and leave time for validation, checkpoint I/O and reporting. Unused CPU does not extend an expired wall allocation. Record concrete limits in the existing plan; planning estimates are not researcher-imposed ceilings.
+- When the runner manages an actual allocation, verify that exhaustion stops new work and preserves partial artifacts without replaying completed cells or resetting the allocation. Test changed or unverified exhaustion/failure paths, reusing unchanged evidence. Do not add custom reserve arithmetic or runner tests solely to satisfy this guide.
+- Ordinary repairs and authorized continuation proceed autonomously. Consult on substantial unplanned resource demand or unplanned restarts from scratch. Reporting cannot authorize new scientific scope or sealed-test access.
 
 ## Slurm / CPU cluster
 

@@ -1,6 +1,6 @@
 ---
 name: research-workflow
-version: 1.2.0
+version: 1.2.1
 description: Organize inquiry, problem framing, evidence and handoffs across disciplines. Use for project kickoff, exploration planning, restoring investigation state, experiment planning/reporting, literature integration and research sites. Not required for ordinary edits; not a literature-search or experiment launcher.
 compatibility: Follow the project's environment and execution conventions. Quarto is optional; no shared account, filesystem, tracker or package manager is assumed.
 metadata:
