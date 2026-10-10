@@ -1,6 +1,6 @@
 ---
 name: research-workflow
-version: 1.2.1
+version: 1.2.2
 description: Organize inquiry, problem framing, evidence and handoffs across disciplines. Use for project kickoff, exploration planning, restoring investigation state, experiment planning/reporting, literature integration and research sites. Not required for ordinary edits; not a literature-search or experiment launcher.
 compatibility: Follow the project's environment and execution conventions. Quarto is optional; no shared account, filesystem, tracker or package manager is assumed.
 metadata:
@@ -42,7 +42,7 @@ Before implementing a new scientific investigation or committing to execution, u
 
 ## Load only the guidance needed
 
-- Session todos, compression and context restoration: [research control](references/research-control.md#todos-and-compressed-context).
+- Task tracking and context restoration: [research control](references/research-control.md#task-tracking-and-context-restoration).
 - Investigation design, ablations, run/evidence records and completed-experiment reporting: [investigations and evidence](references/investigations-and-evidence.md).
 - Comparative training or long runs, including review, resumption and test release: [training and checkpoints](references/training-and-checkpoints.md); for execution/job management, [execution environments](references/execution-environments.md).
 - Before literature delegation or integration of a returned update: [literature integration](references/literature-integration.md). Saved-material reorganization needs no new search.
