@@ -180,18 +180,6 @@ coding). `pi update --extensions` refreshes them to the latest published npm
 versions. These declarations track published releases, not unreleased GitHub
 commits.
 
-The upstream Ponytail default is `full`, injecting coding-simplicity guidance
-into every agent turn. For this research workflow, on each machine run `/ponytail default off`
-and `/ponytail off` once (the first sets the next-session default; the second
-ends Ponytail in the current session). Use `/ponytail full` during implementation
-or code review, then `/ponytail off` when returning to literature, planning or
-analysis. The extension has no automatic stage detection; included
-skills may still be selected for matching coding tasks. `/ponytail-review` and
-`/ponytail-audit` are on-demand, not automatic gates. Scientific correctness,
-project scope, and required independent pre-execution reviews remain governed by
-the project records and instructions. The extension does not itself implement
-or run experiments.
-
 To match this setup's preference to avoid a second completion review, disable
 the optional goal auditor in `/goal-settings` on each machine. This setting is
 stored locally by pi-goal-x and is not part of the shared Pi settings sync.
