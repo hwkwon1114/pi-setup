@@ -33,23 +33,19 @@ separate source claims from proposed transfers. Gates A/B apply when committing
 to scientific implementation/execution, not to every idea. A materially different
 objective is proposed or explicitly researcher-directed, not silently adopted.
 
-## Todos and compressed context
+## Task tracking and context restoration
 
-Use the `todo` tool for coarse deliverables in substantial multi-step work, not
-every action or brainstorming idea. Keep the existing markdown record authoritative
-for the objective, scope, decisions, evidence paths and next authorized action.
-Update tasks at meaningful milestones; completion requires the deliverable and
-applicable checks, not merely a plan or a successful command.
+Use at most one task tracker for workflow progress; do not duplicate its task list
+in another tracker. Task lists, summaries and compressed context are navigation,
+not authorization, scientific evidence or a replacement for the active project
+record. Keep consequential decisions, qualifications, failures, pending reviews
+and evidence locations in that record before handoff or compression.
 
-Before long-context compression, make consequential decisions, qualifications,
-failed attempts, pending reviews and exact evidence locations durable in that
-record. Use `compress` for consumed spans, keeping the current working set.
-After resumption or compression, list outstanding todos and read the current
-record. Use `search_context` to locate older material and `decompress` for exact
-details when needed; summaries and restored text are leads, not fresh verification.
-Recheck consequential primary evidence rather than treating a remembered summary
-as proof. These tools do not reset budgets, widen permissions or revive retired
-experiment queues.
+After resumption or compression, inspect outstanding task progress when available
+and read the current project record. Use `search_context` and `decompress` for older
+conversation details when needed; summaries are leads, not fresh verification.
+Recheck consequential primary evidence. Context tools and task trackers do not
+reset budgets, widen permissions or revive retired experiment queues.
 
 ## Gate A: scientific alignment before implementation
 
