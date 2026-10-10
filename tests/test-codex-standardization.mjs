@@ -12,6 +12,11 @@ test('portable routing standardizes on Codex without removing other providers',(
  assert(!fs.existsSync(new URL('../extensions/multi-openai',import.meta.url)));
  assert(config.packages.includes('npm:pi-subagents@latest'));
  assert(config.packages.includes('npm:pi-antigravity@latest'));
+ assert(config.packages.includes('npm:@juicesharp/rpiv-ask-user-question'));
+ assert(config.packages.includes('npm:pi-goal-x'));
+ const runtime=JSON.parse(fs.readFileSync(new URL('../packages/research-runtime/package.json',import.meta.url),'utf8'));
+ assert(!runtime.dependencies?.['@juicesharp/rpiv-todo']);
+ assert(!runtime.pi.extensions.includes('./todo.ts'));
  assert(config.enabledModels.includes('antigravity/gemini-3.8-flash'));
  for(const [name,role] of Object.entries(config.subagents.agentOverrides)) if(role.model) {
   assert(role.model.startsWith(name.startsWith('literature-')?'openai-codex/':'codex-auto/'));

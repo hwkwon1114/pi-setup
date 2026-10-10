@@ -3,12 +3,10 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@juicesharp/rpiv-todo": "2.12.0",
     "billion-context-pi": "0.1.83"
   },
   "pi": {
     "extensions": [
-      "./todo.ts",
       "./context.ts"
     ]
   }

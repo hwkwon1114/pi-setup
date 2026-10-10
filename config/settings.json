@@ -10,7 +10,9 @@
   "packages": [
     "npm:pi-subagents@latest",
     "npm:pi-antigravity@latest",
-    "./packages/research-runtime"
+    "./packages/research-runtime",
+    "npm:@juicesharp/rpiv-ask-user-question",
+    "npm:pi-goal-x"
   ],
   "enabledModels": [
     "codex-auto/gpt-6.1-sol",

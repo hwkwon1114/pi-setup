@@ -170,31 +170,36 @@ Run `/reload` after applying the resource changes; use `/model` and reselect
 the current model to load refreshed metadata (or restart Pi). Already-running
 sessions may retain the old controller/model until then.
 
-## Todo and long-context research runtime
+## Research workflow extensions and context runtime
 
-`packages/research-runtime` isolates pinned rpiv-todo 2.12.0 and billion-context-pi
-0.1.83 dependencies from Pi's shared npm tree. After installing this setup, run
-in the **installed agent-home package**, so both copy and link installs work:
+Shared `config/settings.json` declares the unpinned npm packages
+`@juicesharp/rpiv-ask-user-question` (interactive decisions) and `pi-goal-x`
+(persistent investigation task plans and autonomous continuation). `pi update
+--extensions` refreshes them to the latest published npm versions. Their source
+repositories are linked from npm metadata; these declarations track published
+releases, not unreleased GitHub commits.
+
+To match this setup's preference to avoid a second completion review, disable
+the optional goal auditor in `/goal-settings` on each machine. This setting is
+stored locally by pi-goal-x and is not part of the shared Pi settings sync.
+The Astra pre-execution review and project scientific records remain authoritative.
+
+`packages/research-runtime` contains only the standalone `billion-context-pi`
+context extension; the Todo integration has been removed. After installing this
+setup, install the local dependency in the **installed agent-home package** so
+copy and link installs both work:
 
 ```bash
 npm ci --prefix "${PI_CODING_AGENT_DIR:-${PI_AGENT_HOME:-$HOME/.pi/agent}}/packages/research-runtime" --ignore-scripts --omit=optional --legacy-peer-deps
 ```
 
-For `--dest`, replace the prefix with that destination's `packages/research-runtime`.
-
-Fully restart Pi; `/reload` cannot reliably clear the old proxy's process markers
-and fetch patches. `/todos` displays milestones and `/acp` reports in-process context.
-The local adapters use coarse tasks and disable ACP updates and delegate tools.
-Standalone billion-context-pi replaces the native proxy; no proxy or certificate
-MITM is used. `pi-subagents`, credentials and reviewer routing remain unchanged. Method guidance stays in research-workflow; project markdown,
-not task status or compressed summaries, is authoritative.
-
-The active research runtime contains only the standalone context manager and
-todo integration; no legacy proxy or Action Fusion package is installed.
-See [runtime scope and limits](packages/research-runtime/README.md).
-The bounded offline standalone fixture checks context projection and exact retrieval,
-not live-provider, image, child/fork/resume, summary-fidelity or performance compatibility.
-Live-session validation remains pending restart.
+For `--dest`, substitute that destination's `packages/research-runtime` path.
+Fully restart Pi after installing or changing extensions. `/acp` reports
+in-process context state. The context extension cancels native compaction while
+active; disable it and restart to use Pi native compaction. Its bounded offline
+fixture does not validate live-provider behavior, child/fork/resume compatibility,
+summary fidelity, images or performance. See
+[runtime scope and limits](packages/research-runtime/README.md).
 
 ## Deliberately not packaged
 
