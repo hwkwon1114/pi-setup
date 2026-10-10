@@ -12,7 +12,8 @@
     "npm:pi-antigravity@latest",
     "./packages/research-runtime",
     "npm:@juicesharp/rpiv-ask-user-question",
-    "npm:pi-goal-x"
+    "npm:pi-goal-x",
+    "npm:@dietrichgebert/ponytail"
   ],
   "enabledModels": [
     "codex-auto/gpt-6.1-sol",

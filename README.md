@@ -172,12 +172,20 @@ sessions may retain the old controller/model until then.
 
 ## Research workflow extensions and context runtime
 
-Shared `config/settings.json` declares the unpinned npm packages
-`@juicesharp/rpiv-ask-user-question` (interactive decisions) and `pi-goal-x`
-(persistent investigation task plans and autonomous continuation). `pi update
---extensions` refreshes them to the latest published npm versions. Their source
-repositories are linked from npm metadata; these declarations track published
-releases, not unreleased GitHub commits.
+Shared `config/settings.json` declares unpinned npm packages:
+`@juicesharp/rpiv-ask-user-question` (interactive decisions), `pi-goal-x`
+(persistent investigation task plans and autonomous continuation), and
+`@dietrichgebert/ponytail` (the official Pi extension and its skills for lean
+coding). `pi update --extensions` refreshes them to the latest published npm
+versions. These declarations track published releases, not unreleased GitHub
+commits.
+
+Ponytail defaults to `full` and injects its coding-simplicity guidance into
+agent turns. Use `/ponytail lite`, `/ponytail full`, `/ponytail ultra`, or
+`/ponytail off`; `/ponytail-review` and `/ponytail-audit` are on-demand, not
+automatic gates. Scientific correctness, project scope, and required independent
+pre-execution reviews remain governed by the project records and instructions.
+The extension does not itself implement or run experiments.
 
 To match this setup's preference to avoid a second completion review, disable
 the optional goal auditor in `/goal-settings` on each machine. This setting is

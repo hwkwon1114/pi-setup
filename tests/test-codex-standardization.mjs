@@ -14,6 +14,7 @@ test('portable routing standardizes on Codex without removing other providers',(
  assert(config.packages.includes('npm:pi-antigravity@latest'));
  assert(config.packages.includes('npm:@juicesharp/rpiv-ask-user-question'));
  assert(config.packages.includes('npm:pi-goal-x'));
+ assert(config.packages.includes('npm:@dietrichgebert/ponytail'));
  const runtime=JSON.parse(fs.readFileSync(new URL('../packages/research-runtime/package.json',import.meta.url),'utf8'));
  assert(!runtime.dependencies?.['@juicesharp/rpiv-todo']);
  assert(!runtime.pi.extensions.includes('./todo.ts'));
