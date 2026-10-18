@@ -2,6 +2,7 @@
 name: literature-reviewer
 description: Academic literature review delegate — searches, screens, and synthesizes scholarly evidence via isolated literature_review runner
 tools: literature_review
+model: codex-auto/gpt-6-astra
 systemPromptMode: replace
 inheritProjectContext: true
 ---

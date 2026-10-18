@@ -34,6 +34,8 @@ For an image-only request, skip text extraction and follow `references/rendering
 
 ## Workflow
 
+Reuse same-version extractions and already verified pages when adequate for the current question. Helper page ceilings are adjustable batching defaults, not researcher approval gates; keep practical parser timeouts and raster-size protection. Do not repeat extraction or visual checks merely to satisfy a sequence.
+
 1. Establish the question and the exact PDF/version. Locate the original without renaming or modifying it. Inspect page count and metadata with `pdfinfo`; metadata is a lead, not verified bibliographic truth.
 2. Choose extraction scope independently from reading scope. Honor a requested page range; otherwise extract all pages of a reasonably sized PDF (within the default 50-page ceiling). For larger PDFs choose a justified range or explicitly raise the ceiling. Read selectively: inspect the abstract, introduction, and section headings to guide further reading. Full extraction is not full-text reading; do not dump an entire corpus into context.
 3. Extract with the bundled helper (resolve its path relative to this skill):

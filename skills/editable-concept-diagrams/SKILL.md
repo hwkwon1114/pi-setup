@@ -1,8 +1,8 @@
 ---
 name: editable-concept-diagrams
 version: 1.0.0
-description: Create simple conceptual illustrations and research-vision diagrams through image generation followed by a native editable SVG rebuild. Use for pictorial schematics, slide concepts, and requests to match an existing illustration's style. Not for quantitative plots, scientific image analysis, or raster images merely wrapped in SVG.
-compatibility: Requires an available image-generation tool for concept exploration and an existing SVG renderer for visual verification. Install dependencies only after explicit approval.
+description: Create simple conceptual illustrations and research-vision diagrams directly in native editable SVG or through image-generated exploration followed by an SVG rebuild. Use for pictorial schematics, slide concepts, and requests to match an existing illustration's style. Not for quantitative plots, scientific image analysis, or raster images merely wrapped in SVG.
+compatibility: Uses an existing SVG renderer for visual verification; image-generation capability is needed only for generated exploration. Install dependencies only after explicit approval.
 metadata:
   author: "Hyunwoo Kwon <hwkwkon1114@gmail.com>"
   tags:
@@ -14,15 +14,15 @@ metadata:
 
 # Editable concept diagrams
 
-Use generated images to explore composition, then rebuild the useful design with editable vector elements. The image is a visual draft, not evidence or an automatically editable source.
+Draft straightforward diagrams directly in SVG. Use generated images when requested or when pictorial exploration helps, then rebuild the useful design with editable vector elements. A generated image is a visual draft, not evidence or an automatically editable source.
 
 ## Purpose
 
-Design clean, editable vector conceptual illustrations and architecture diagrams for presentations and manuscripts by exploring compositions with image drafts and constructing clean, structured SVG assets.
+Design clean, editable conceptual illustrations and architecture diagrams using the simplest suitable route: direct SVG or image-assisted exploration.
 
 ## Prerequisites
 
-- Access to an image-generation capability (e.g. `generate_image`) for exploratory concept layouts.
+- For image-assisted exploration only: access to an image-generation capability (e.g. `generate_image`).
 - An SVG rendering utility (e.g., `resvg`, `inkscape`, or browser-based rendering) to generate PNG previews for visual inspection.
 
 ## 1. Establish meaning and style
@@ -33,13 +33,13 @@ Design clean, editable vector conceptual illustrations and architecture diagrams
 - Preserve necessary distinctions despite simplifying: sensing versus actuation, planning versus execution, learning versus deployment, evaluation versus feedback. An arrow must have an intelligible direction and meaning.
 - Quantitative plots belong to scientific-visualization instead. For mixed figures, keep data panels reproducible and separate from generated conceptual artwork; never generate apparent measurements or simulation results.
 
-## 2. Generate a visual draft
+## 2. Choose direct SVG or a generated visual draft
 
-- Use the available image-generation tool to establish composition, pictorial motifs, and palette. Request short labels and simple flat-vector styling.
+- For a straightforward diagram, proceed directly to SVG. When the user asks for image generation, use the available image-generation tool; otherwise use it only when exploration adds value. It can establish composition, pictorial motifs, and palette. Request short labels and simple flat-vector styling.
 - Include only the conceptual information needed by the tool. Do not upload private reference files or other private content without explicit permission; a style description may suffice.
 - Save the generated original and record its prompt, actual path, and model if reported. Inspect the result: generated text, machine geometry, and arrow directions are not authoritative.
 - If the user already chose a generated draft, reuse it. Do not generate again merely to satisfy this sequence. Otherwise proceed with the strongest initial draft unless a consequential ambiguity needs the user's choice; avoid unrequested variant sprawl.
-- If generation is unavailable or fails, report the blocker and ask whether to proceed directly in SVG. Do not describe a hand-drawn SVG as image-generated.
+- If optional generation fails, report the limitation and proceed directly in SVG when it satisfies the request. If generated imagery itself is required, report the blocker rather than silently substituting. Do not describe a hand-drawn SVG as image-generated.
 
 ## 3. Rebuild as native SVG
 
@@ -58,9 +58,9 @@ Design clean, editable vector conceptual illustrations and architecture diagrams
 
 ## 5. Deliver and preserve
 
-- Keep the generated original, editable SVG, rendered preview, and a short provenance note together or cross-reference their real paths. The note records the prompt, draft used, substantive changes, checks performed, and remaining limits; it stays outside the artwork.
+- Keep the editable SVG, rendered preview, and, when used, generated original together or cross-reference their real paths. Reuse an existing project note for provenance. The note records the prompt, draft used, substantive changes, checks performed, and remaining limits; it stays outside the artwork.
 - Provide concise opening instructions appropriate to the environment; in a remote VS Code terminal offer a copyable `code /absolute/path/to/diagram.svg` command after checking the file exists.
-- Describe the output as a native SVG reconstruction, not exact automated vectorization. No extra installation, configuration changes, publication, or experiments are implied by this workflow.
+- Describe the output as direct SVG or a native SVG reconstruction, as actually produced—not exact automated vectorization. No extra installation, configuration changes, publication, or experiments are implied by this workflow.
 
 ## Examples
 
@@ -97,5 +97,5 @@ Constructing structured SVG layout:
 |---|---|---|
 | `Label text clipped or overlapping` | Bounding box insufficient for rendered font metrics | Increase group padding or adjust `font-size` / `viewBox` coordinates |
 | `SVG XML parse error` | Unclosed tags or unescaped characters in text elements | Validate well-formedness with XML parser before visual rendering |
-| `Image generation failure` | Tool or provider unavailable | Ask user if direct vector drafting without a raster draft is preferred |
+| `Image generation failure` | Tool or provider unavailable | Proceed directly in SVG if generation was optional; otherwise report the unmet requirement |
 | `Missing local SVG renderer` | `resvg` or `inkscape` not installed on host | Provide copyable file path and request browser/VS Code visual review |

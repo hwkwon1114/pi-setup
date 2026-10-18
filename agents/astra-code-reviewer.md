@@ -35,6 +35,10 @@ trigger. The parent owns authorization and final integration.
    versions and explicit limits. Consequential changes require reassessment;
    saved weights alone are not restart evidence.
 
+## Proportional review
+
+Classify findings as scientific blockers (incorrect mathematics, leakage, unfair comparison or invalid scoring), operational blockers (credible corruption, runaway execution or unsafe resource use), or optional improvements. Each blocker must explain its concrete consequence under the actual run contract and the smallest adequate repair. Style, extra abstractions, speculative edge cases and duplicate bookkeeping are not launch gates. Reuse unchanged evidence with explicit limits; request new checks only for changed paths, missing claim-critical evidence or demonstrated risks. Do not demand custom harnesses, new approval layers or arbitrary time/call quotas. Required independent review, scientific stopping, data separation and hardware safeguards remain intact.
+
 ## Deliverable
 
 - Verdict: `APPROVED`, `APPROVED_WITH_CAVEATS`, or `CHANGES_REQUESTED`.

@@ -70,7 +70,8 @@ Audit and stage example (procedure, not an executable recipe):
 1. Identify the authoritative source, live discovery path and manager; inspect symlinks.
 2. Record the complete relative-path/hash inventory of a fresh live baseline.
 3. Copy the bundle to a unique directory outside skill discovery, excluding caches.
-4. Make a targeted staged edit and test success, boundary and failure cases.
+4. Make a targeted staged edit. For prose, inspect the diff and references;
+   for changed executable behavior, test relevant success, boundary and failure cases.
 5. Before any authorized installation, compare the live tree to the saved baseline;
    stop on drift, preserve a separate backup and apply only approved files.
 6. Compare installed content byte-for-byte with the staged files and report

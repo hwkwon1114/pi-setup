@@ -67,7 +67,7 @@ This is a simple single-process example, not an atomic exporter or a concurrent-
 
 ## Reproducibility record
 
-Alongside the project script and caption, save a small JSON/YAML record or equivalent project manifest containing:
+Reuse the project script, caption or existing run record for applicable provenance below. Create a separate JSON/YAML record only when those sources are insufficient; do not duplicate unchanged metadata:
 
 - Canonical stem and actual output paths.
 - Source data paths/identifiers (and checksums where practical).

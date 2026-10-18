@@ -40,6 +40,12 @@ Choose the next action by what it could distinguish: inspect a source, work thro
 
 Before implementing a new scientific investigation or committing to execution, use [research control](references/research-control.md) to connect outcomes to the decision and check the applicable host requirements. Reuse existing authorization without repeated procedural approvals; material scope/recipe changes still follow the host's policy.
 
+## Smallest adequate implementation
+
+Connect the scientific decision to the shortest adequate implementation, test the mathematical mechanism, information boundaries and scoring, then review, execute and report—including negative outcomes. This is a default, not a new approval ladder. Before adding infrastructure, explain briefly which concrete failure it prevents and why existing tools are insufficient; no separate template is required.
+
+Keep research checks distinct from maintenance checks. Reuse same-version evidence, consolidate duplicate fixtures, and rerun launcher/receipt/restart checks when affected code changes or a demonstrated risk warrants them. Do not replace real scoring or leakage tests with superficial smoke tests. Continue ordinary repairs autonomously within scope.
+
 ## Load only the guidance needed
 
 - Task tracking and context restoration: [research control](references/research-control.md#task-tracking-and-context-restoration).
@@ -54,7 +60,7 @@ Literature routing, reviewer authorization and execution permissions remain with
 
 ## Synthesize and hand off
 
-Separate source statements, observations, derivations, interpretations and proposals. Preserve provenance, disagreements, failures, negative outcomes and unresolved limits. Reuse working runners and schemas; do not add infrastructure without a demonstrated need. In particular, never invent distributed cluster harnesses (POSIX file locks, crash-gap watermarks, pre-update atomic ledgers, micro-second profiling envelopes) for fast local benchmarks or toy ODEs (< 15 min runtime). Focus on the scientific question, not cluster DevOps.
+Separate source statements, observations, derivations, interpretations and proposals. Preserve provenance, disagreements, failures, negative outcomes and unresolved limits. Reuse working runners and schemas; do not add infrastructure without a demonstrated need. Do not infer a need for distributed orchestration, ledgers or profiling frameworks merely from runtime or model size. Choose safeguards from actual failure risks and existing execution facilities, not arbitrary duration categories.
 
 Explain what changed, what was actually checked, what the evidence supports and the next useful action. Proposed, implemented, tested, launched, execution-complete and scientifically reviewed are distinct states. Check artifacts and current job state before reporting progress; a plan, empty tool return or successful render is not verification.
 

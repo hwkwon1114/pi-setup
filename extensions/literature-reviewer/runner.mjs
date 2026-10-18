@@ -47,9 +47,9 @@ export function buildArgs({ cli, extension, agentDir, promptFile, model, thinkin
   // Load the optional Antigravity provider without discovering unrelated extensions.
   const antigravity = path.join(agentDir,'npm','node_modules','pi-antigravity/src/index.ts');
   if (fs.existsSync(antigravity)) args.push('-e',antigravity);
-  // Isolated children need the Codex account adapter only for numbered slots.
+  // Isolated children need the adapter for automatic routing and numbered slots.
   const provider = model.split('/')[0];
-  if (/^openai-codex-([2-9]|[1-9]\d+)$/.test(provider)) {
+  if (provider === 'codex-auto' || /^openai-codex-([2-9]|[1-9]\d+)$/.test(provider)) {
     const multiCodex = path.join(agentDir, 'extensions', 'multi-codex', 'index.ts');
     if (!fs.existsSync(multiCodex)) throw new Error('Missing Codex account adapter');
     args.push('-e', multiCodex);

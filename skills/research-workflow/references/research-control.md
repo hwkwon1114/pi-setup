@@ -12,10 +12,9 @@ If a new project has no objective or current record, use
 intent. Reuse existing documents; missing settled details need not block exploration.
 
 Read the project's objective entry point and active investigation record, not
-just a conversation summary. Reuse existing notes/protocols rather than adding
-a parallel catalog. Restore the ultimate objective, current approved question,
-task connection, non-goals, data/resource limits, decisions/rejected directions,
-evidence and limits, unresolved conflicts, review status and next action.
+just a conversation summary. Restore the ultimate objective, current approved
+question, task connection, non-goals, data/resource limits, decisions/rejected
+directions, evidence and limits, review status and next action.
 
 A missing or ambiguous current question blocks new scientific execution, not
 safe inspection or ordinary edits. Ask only for blocking decisions; continue
@@ -114,6 +113,6 @@ explicit researcher objective change. Include a safe ordinary-edit case.
 
 Distinguish source/format tests, model decision tests with synthetic summaries,
 actual native compaction/resume tests and launch-enforcement tests. Passing one
-does not establish the others, natural skill selection or universal drift
-prevention. Keep case prompts, expected outcomes and raw responses separately
-so a responder is not simply copying an answer key.
+does not establish natural skill selection or universal drift prevention. Keep case
+prompts, expected outcomes and raw responses separately so a responder is not
+simply copying an answer key.

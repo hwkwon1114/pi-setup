@@ -16,13 +16,15 @@ Keep a change report outside the staged skill with rationale, baseline hashes, p
 
 ## Validation layers
 
+Scale checks to the change. For prose-only edits, inspect the diff, frontmatter, references and preservation of substantive rules; do not execute unrelated helpers or invent behavioral fixtures. Use the behavioral layer for changed executable behavior or operational commands. Reuse unchanged verification with its limits.
+
 1. **Format:** frontmatter parses using a real available YAML parser or Pi's own loader; validate name/description types and actual parsed description length (1024-character standard limit), not regex reconstruction. Do not install a parser without permission. If full parsing is unavailable, report that limitation rather than a full pass. Pi permits directory/name differences, although matching them is our portability convention.
 2. **Bundle:** resolve declared local references recursively, including Markdown links and command script paths, not just backticked paths. Classify examples/globs explicitly. Flag missing files, absolute machine-specific paths, escaping paths and symlinks for review. Check secrets, unexpected executables, dependencies and generated junk. A lexical scanner alone cannot prove completeness.
 3. **Behavior:** run safe representative examples and boundary/error cases in isolated temporary destinations, with explicit timeouts. Test documented commands after substituting placeholders, from a clean shell and unrelated working directory. Record exact commands, versions, environment and outputs. A guard passes only if the intended guard caused rejection.
 4. **Regression:** repeat the case that motivated the change. For restructures, inventory preserved rules and check lost/added behavior as well as textual differences. Verify changed dependencies and shared rules across siblings.
 5. **Activation:** `/reload` refreshes Pi resources, but helper tests do not prove natural skill selection. Test selection in a fresh session separately; distinguish an explicit `/skill:name` invocation from unprompted activation. No claim of automatic monitoring without tested integration.
 
-Tests should themselves include known-good and known-bad fixtures. If measuring numerical accuracy or performance, use matched inputs/configurations and state sample size and timing boundaries. Do not equate parse success with equation fidelity, table correctness, or source agreement.
+Tests of changed executable guards should include known-good and known-bad fixtures. If measuring numerical accuracy or performance, use matched inputs/configurations and state sample size and timing boundaries. Do not equate parse success with equation fidelity, table correctness, or source agreement.
 
 ## Approval and install
 

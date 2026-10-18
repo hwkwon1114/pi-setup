@@ -7,7 +7,7 @@ Matplotlib places text where it is told and reports nothing when the result is w
 Overflowing an axes, spilling out of a shaded band, and colliding with another label all
 export cleanly and fail silently. Visual review catches these, but only for the figure
 version someone actually opened; the next regeneration with new data can reintroduce them.
-Where the figure is scripted, make the placement contract machine-checkable.
+Rendered inspection is the default. Add machine-checkable placement only for recurring observed defects or batch-generated figures where manual inspection is insufficient; scripting alone does not require a new validator.
 
 ## What to check
 
@@ -15,8 +15,7 @@ Where the figure is scripted, make the placement contract machine-checkable.
 - **Text inside its annotated region.** A band label belongs within the band it names, not
   merely within the axes.
 - **Text against text.** Intersecting extents of visible labels.
-- **Decision rule.** Fail the generating script on violations rather than printing a
-  warning that scrolls past, so a defective figure is not saved unnoticed.
+- **Decision rule, when automated checks are warranted.** Fail on unintended violations of the declared layout, excluding intentional overlaps or outside-axes annotations.
 
 These are geometric facts. They say nothing about whether the encoding is appropriate,
 the palette is distinguishable, or the numbers are right.
