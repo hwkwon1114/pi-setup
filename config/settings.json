@@ -1,7 +1,7 @@
 {
   "theme": "light",
-  "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-6.1-sol",
+  "defaultProvider": "antigravity",
+  "defaultModel": "gemini-3.8-flash",
   "defaultThinkingLevel": "medium",
   "warnings": {
     "anthropicExtraUsage": false
@@ -16,20 +16,13 @@
     "npm:@dietrichgebert/ponytail"
   ],
   "enabledModels": [
-    "codex-auto/gpt-6.1-sol",
+    "antigravity/gemini-3.8-flash",
+    "antigravity/gemini-4-argon",
     "codex-auto/gpt-6-astra",
+    "codex-auto/gpt-6.1-sol",
     "codex-auto/gpt-6-luna",
-    "openai-codex/gpt-6.1-sol",
-    "openai-codex/gpt-6-astra",
-    "openai-codex/gpt-6-luna",
-    "openai-codex-2/gpt-6-luna",
-    "openai-codex-2/gpt-6.1-sol",
-    "openai-codex-2/gpt-6-astra",
-    "openai-codex-3/gpt-6-luna",
-    "openai-codex-3/gpt-6.1-sol",
-    "openai-codex-3/gpt-6-astra",
-    "antigravity/claude-opus-5-5",
-    "antigravity/gemini-3.8-flash"
+    "anthropic/claude-opus-5-5",
+    "anthropic/claude-sonnet-5-5"
   ],
   "subagents": {
     "defaultModel": "codex-auto/gpt-6.1-sol",
@@ -38,16 +31,8 @@
     ],
     "agentOverrides": {
       "astra-code-reviewer": {
-        "model": "codex-auto/gpt-6-astra"
-      },
-      "worker": {
-        "model": "codex-auto/gpt-6.1-sol"
-      },
-      "scout": {
-        "model": "codex-auto/gpt-6.1-sol"
-      },
-      "researcher": {
-        "model": "codex-auto/gpt-6.1-sol"
+        "model": "codex-auto/gpt-6-astra",
+        "thinking": "xhigh"
       },
       "reviewer": {
         "model": "codex-auto/gpt-6-astra"
@@ -55,43 +40,22 @@
       "oracle": {
         "model": "codex-auto/gpt-6-astra"
       },
-      "evidence-auditor": {
-        "model": "codex-auto/gpt-6-astra",
-        "disabled": true
-      },
-      "claude-code": {
-        "disabled": true
-      },
-      "claude-code-writer": {
-        "disabled": true
-      },
-      "codex-exec": {
-        "disabled": true
-      },
-      "codex-exec-writer": {
-        "disabled": true
-      },
-      "cursor-agent": {
-        "disabled": true
-      },
-      "cursor-agent-writer": {
-        "disabled": true
-      },
-      "delegate": {
-        "disabled": true
+      "worker": {
+        "model": "antigravity/gemini-3.8-flash"
       },
       "literature-coordinator": {
-        "model": "openai-codex/gpt-6-astra",
+        "model": "codex-auto/gpt-6-astra",
         "thinking": "xhigh"
       },
       "literature-leaf": {
-        "model": "openai-codex/gpt-6.1-sol",
+        "model": "codex-auto/gpt-6.1-sol",
         "thinking": "medium"
       },
       "literature-reviewer": {
-        "model": "openai-codex/gpt-6-astra",
+        "model": "codex-auto/gpt-6-astra",
         "thinking": "xhigh"
       }
     }
-  }
+  },
+  "lastChangelogVersion": "1.3.0"
 }

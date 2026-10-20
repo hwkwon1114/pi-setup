@@ -1,0 +1,12 @@
+{
+  "provider": "codex-auto",
+  "model": "gpt-6-astra",
+  "thinkingLevel": "xhigh",
+  "hideUnfocusedPrompt": true,
+  "oracle": {
+    "enabled": true,
+    "provider": "codex-auto",
+    "model": "gpt-6-astra",
+    "thinkingLevel": "xhigh"
+  }
+}

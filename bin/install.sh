@@ -94,6 +94,11 @@ fi
 # --- directory payloads --------------------------------------------------------
 for d in "${PI_LINK_DIRS[@]}"; do link_or_copy "$d" "$d"; done
 
+# --- apply runtime patches (pi-goal-x liveness) --------------------------------
+if [ -f "$REPO/bin/patch-pi-goal-x.sh" ]; then
+  run "$REPO/bin/patch-pi-goal-x.sh"
+fi
+
 # --- git hooks: `git pull` re-syncs settings.json and relinks missing links -----
 if [ "$MODE" = link ] && [ "$RESOURCES_ONLY" = 0 ] && [ -z "${PI_SETUP_NO_HOOKS:-}" ] && HOOKS="$(git -C "$REPO" rev-parse --git-path hooks 2>/dev/null)"; then
   case "$HOOKS" in /*) ;; *) HOOKS="$REPO/$HOOKS" ;; esac
