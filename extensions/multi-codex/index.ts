@@ -50,7 +50,12 @@ export function createCodexAlias(native: Provider<any>, slot: number): Provider<
 }
 
 export default async function multiCodex(pi: ExtensionAPI, suppliedNative?: Provider<any>) {
-  const native = suppliedNative ?? (await import("@earendil-works/pi-ai/providers/all")).builtinProviders().find(provider => provider.id === BASE);
+  // The bare built-in provider omits newer models from Pi's cached catalog.
+  const native = suppliedNative ?? (await (await import("@earendil-works/pi-coding-agent")).ModelRuntime.create({
+    modelsPath: join(getAgentDir(), "models.json"),
+    authPath: join(getAgentDir(), "auth.json"),
+    allowModelNetwork: false,
+  })).getProvider(BASE);
   if (!native) throw new Error("Native Codex provider unavailable");
   const registered = new Set<number>();
   function credentials(): number[] {

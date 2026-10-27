@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import {depthFrom,buildArgs,runProcess,resolveRoleModel} from './runner.mjs';
-import {formatFailure} from './runtime.mjs';
-import {progressUpdate} from './progress.mjs';
-import {childToolNames} from './native-mcp.mjs';
+import {depthFrom,buildArgs,runProcess,resolveRoleModel} from '../runner.mjs';
+import {formatFailure} from '../runtime.mjs';
+import {progressUpdate} from '../progress.mjs';
+import {childToolNames} from '../native-mcp.mjs';
 const temp=()=>fs.mkdtempSync(path.join(os.tmpdir(),'lit-reviewer-test-'));
 const emit="console.log(JSON.stringify({type:'message_end',message:{role:'assistant',content:[{type:'text',text:'fixture report'}],stopReason:'stop'}}));";
 test('depth validation',()=>{assert.equal(depthFrom({}),0);assert.equal(depthFrom({PI_LITERATURE_DEPTH:'2'}),2);for(const n of ['-1','3','abc','1.5'])assert.throws(()=>depthFrom({PI_LITERATURE_DEPTH:n}));});
@@ -17,7 +17,7 @@ test('explicit role configuration and leaf tools',()=>{
  fs.rmSync(root,{recursive:true});
 });
 test('coordinator stays Astra/xhigh and leaves use Sol/medium',t=>{
- const source=fs.readFileSync(new URL('./index.ts',import.meta.url),'utf8');
+ const source=fs.readFileSync(new URL('../index.ts',import.meta.url),'utf8');
  const routing=source.match(/const model=dispatchedDepth===1[\s\S]*?const thinking=[^;]+;/)?.[0];
  assert(routing,'explicit model/thinking routing must exist');
  // Evaluate the actual dispatch declarations, not a duplicated routing table.
@@ -38,7 +38,7 @@ test('coordinator stays Astra/xhigh and leaves use Sol/medium',t=>{
  assert.match(source,/leaf retrieval reviewers use Sol medium/);
  assert.doesNotMatch(source,/gpt-5\.6-sol/);
  for(const file of ['README.md','literature-reviewer.md']) {
-  const text=fs.readFileSync(new URL(file,import.meta.url),'utf8');
+  const text=fs.readFileSync(new URL('../'+file,import.meta.url),'utf8');
   assert.match(text,/Sol\/medium/);assert.doesNotMatch(text,/Luna|gpt-5\.6-luna/);
  }
 });

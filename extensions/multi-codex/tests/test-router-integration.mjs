@@ -1,4 +1,4 @@
-// Bounded correctness fixture: two real child initializations and six mocked
+// Bounded correctness fixture: three real child initializations and nine mocked
 // quota GETs. No child prompts, model calls, real credentials or network.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -8,7 +8,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { registerHooks } from 'node:module';
-import { CODEX_SLOTS } from './router.mjs';
+import { CODEX_SLOTS } from '../router.mjs';
 
 let piDir=process.env.PI_CODEX_TEST_PI_DIR;
 if(!piDir) try {
@@ -55,14 +55,22 @@ test('real SDK + child factory resolve automatic models and dispatch exact model
     return aliases[specifier]?{url:pathToFileURL(aliases[specifier]).href,shortCircuit:true}:nextResolve(specifier,context);
    }});
    const sdk=await import(pathToFileURL(path.join(piDir,'dist/index.js')).href);
+   // Terra is deliberately absent from the bundled provider: restore it only
+   // through the same persisted catalog overlay that production uses.
+   const baseline=await sdk.ModelRuntime.create({authPath,modelsPath:path.join(root,'models.json'),
+    allowModelNetwork:false,refreshOnCreate:false});
+   const terra={...baseline.getModel('openai-codex','gpt-6.1-sol'),
+    id:'gpt-6.1-terra',name:'Fixture Terra',contextWindow:500_000,maxTokens:128_000};
+   fs.writeFileSync(path.join(root,'models-store.json'),JSON.stringify({
+    'openai-codex':{models:[terra],lastModified:Date.now()+86400_000,checkedAt:Date.now()}}));
    const {createDefaultChildSessionFactory}=await import(pathToFileURL(factoryFile).href);
    // No catalog discovery/network during initialization; all credentials are fixtures.
    const offlineSdk={...sdk,ModelRuntime:{create:options=>sdk.ModelRuntime.create({...options,
     authPath,modelsPath:path.join(root,'models.json'),modelsStorePath:path.join(root,'models-store.json'),
     allowModelNetwork:false,refreshOnCreate:false})}};
    factory=createDefaultChildSessionFactory({loadPiCodingAgent:async()=>offlineSdk});
-   const extension=path.join(import.meta.dirname,'index.ts');
-   for(const id of ['gpt-6-astra','gpt-6.1-sol']) {
+   const extension=path.join(import.meta.dirname,'../index.ts');
+   for(const id of ['gpt-6-astra','gpt-6.1-sol','gpt-6.1-terra']) {
     let ctx;
     const child=await factory.create({cwd:root,model:`codex-auto/${id}`,runtime:{},processEnv:{},
      storage:{kind:'memory'},ambientExtensions:false,extensionPaths:[extension],
@@ -71,11 +79,16 @@ test('real SDK + child factory resolve automatic models and dispatch exact model
      onExtensionError:error=>errors.push(String(error.error))});
     try {
      assert.equal(child.virtualModelId,`codex-auto/${id}`);
+     if(id==='gpt-6.1-terra') {
+      assert.equal(ctx.model.contextWindow,500_000);
+      assert.equal(ctx.model.maxTokens,32_000);
+      for(const provider of CODEX_SLOTS) assert.ok(ctx.modelRegistry.find(provider,id));
+     }
      const route=await ctx.modelRegistry.runtime.resolveModel(ctx.model,[],{reason:'user',thinkingLevel:'high'});
      assert.equal(route.model.provider,'openai-codex-2');assert.equal(route.model.id,id);assert.equal(route.thinkingLevel,'high');
     } finally {await child.dispose();}
    }
-   assert.deepEqual(errors,[]);assert.equal(calls.length,6);
+   assert.deepEqual(errors,[]);assert.equal(calls.length,9);
    assert.equal(fs.readFileSync(authPath,'utf8'),JSON.stringify(credentials));
   } finally {
    await factory?.dispose();aliasesHook?.deregister();globalThis.fetch=oldFetch;

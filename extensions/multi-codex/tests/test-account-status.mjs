@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { accountEmail, installAccountStatus } from './account-status.mjs';
+import { accountEmail, installAccountStatus } from '../account-status.mjs';
 const jwt = payload => `fixture.${Buffer.from(JSON.stringify(payload)).toString('base64url')}.fixture`;
 const credential = email => ({type:'oauth', access:jwt({'https://api.openai.com/profile':{email}})});
 test('email extraction never exposes tokens or malformed/control claims', () => {

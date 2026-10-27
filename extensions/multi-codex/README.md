@@ -12,7 +12,7 @@ reused or removed. Fully restart Pi after changing this adapter.
 
 ## Automatic subagent selection
 
-`codex-auto/gpt-6.1-sol`, `codex-auto/gpt-6-astra` and `codex-auto/gpt-6-luna`
+`codex-auto/gpt-6.1-sol`, `codex-auto/gpt-6-astra` and `codex-auto/gpt-6.1-terra`
 are native Pi virtual models. They select a **physical model with exactly the
 same model ID and thinking level** on a signed-in Codex account from slots 1–3.
 Pi records the actual dispatched account/model in each assistant message.

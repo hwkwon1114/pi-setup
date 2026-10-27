@@ -3,7 +3,7 @@ name: council-astra
 description: Astra - Mathematical rigor, numerical stability, algorithm design, and convergence specialist
 tools: read, grep, find, ls
 model: codex-auto/gpt-6-astra
-thinking: xhigh
+thinking: max
 systemPromptMode: replace
 inheritProjectContext: true
 ---

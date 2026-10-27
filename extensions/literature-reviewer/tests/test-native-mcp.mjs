@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { isolatedMcpConfig, installChildMcp, childToolNames, registerChildToolLoadout } from './native-mcp.mjs';
+import { isolatedMcpConfig, installChildMcp, childToolNames, registerChildToolLoadout } from '../native-mcp.mjs';
 
  test('native MCP child config excludes ambient/project servers and retains timeout/scope', () => {
   const cfg = isolatedMcpConfig();
@@ -54,8 +54,8 @@ test('invalid run directory fails before registering MCP', async () => {
 });
 
 test('launcher uses codemode, not removed adapter gateway, while ambient extensions remain disabled', () => {
-  const launcher = fs.readFileSync(new URL('runner.mjs', import.meta.url), 'utf8');
-  const integration = fs.readFileSync(new URL('index.ts', import.meta.url), 'utf8');
+  const launcher = fs.readFileSync(new URL('../runner.mjs', import.meta.url), 'utf8');
+  const integration = fs.readFileSync(new URL('../index.ts', import.meta.url), 'utf8');
   assert.doesNotMatch(launcher, /'--tools'/);
   assert.equal(childToolNames(1).includes('literature_review'), true);
   assert.equal(childToolNames(2).includes('literature_review'), false);

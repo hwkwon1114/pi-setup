@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import {runProcess} from './runner.mjs';
-import {formatFailure} from './runtime.mjs';
+import {runProcess} from '../runner.mjs';
+import {formatFailure} from '../runtime.mjs';
 const end="console.log(JSON.stringify({type:'message_end',message:{role:'assistant',content:[{type:'text',text:'done'}],stopReason:'stop'}}));";
 function workspace(t) { const dir=fs.mkdtempSync(path.join(os.tmpdir(),'lit-lifecycle-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));return dir; }
 function run(t,body,options={}) { const runDir=workspace(t);return runProcess({command:process.execPath,args:['--input-type=module','-e',body],cwd:runDir,runDir,env:{...process.env,PI_LITERATURE_DEPTH:'1'},task:'fixture',timeoutMs:null,...options}); }
@@ -33,7 +33,7 @@ test('heartbeat exposes silence/checkpoint and user cancellation still stops unb
   assert.equal(JSON.parse(fs.readFileSync(path.join(r.runDir,'progress.json'))).status,'incomplete');
 });
 test('leaf timeout does not terminate its unbounded coordinator',async t=>{
-  const body=`import fs from 'node:fs';import {runProcess} from ${JSON.stringify(new URL('./runner.mjs',import.meta.url).href)};
+  const body=`import fs from 'node:fs';import {runProcess} from ${JSON.stringify(new URL('../runner.mjs',import.meta.url).href)};
     fs.mkdirSync('leaf');const r=await runProcess({command:process.execPath,args:['-e','setInterval(()=>{},1000)'],cwd:process.cwd(),runDir:process.cwd()+'/leaf',env:{...process.env,PI_LITERATURE_DEPTH:'2'},task:'leaf',timeoutMs:100,detached:false});
     if(r.error!=='Time limit exceeded')throw new Error('leaf did not time out');
     fs.writeFileSync('report.md','Integrated partial child results');${end}`;

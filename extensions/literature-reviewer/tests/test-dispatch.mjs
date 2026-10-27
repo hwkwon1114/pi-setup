@@ -4,7 +4,7 @@ import fs from 'node:fs';
 
 // Exercise the launcher's actual policy snippets without spawning Pi, loading
 // credentials/MCP, or spending provider quota. Runner lifecycle has separate tests.
-const source=fs.readFileSync(new URL('./index.ts',import.meta.url),'utf8');
+const source=fs.readFileSync(new URL('../index.ts',import.meta.url),'utf8');
 function policy(depth) {
   const declarations=source.match(/const maxConcurrent=[^;]+;[\s\S]*?const maxDispatches=[^;]+;/)?.[0];
   const guards=source.match(/if\(active>=maxConcurrent\)[^\n]+\n\s*if\(dispatched>=maxDispatches\)[^\n]+/)?.[0];

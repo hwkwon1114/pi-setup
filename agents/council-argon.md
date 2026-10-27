@@ -3,7 +3,7 @@ name: council-argon
 description: Argon 4 - Physical modeling, empirical mechanism validity, and baseline/ablation critic
 tools: read, grep, find, ls
 model: antigravity/gemini-4-argon
-thinking: high
+thinking: max
 systemPromptMode: replace
 inheritProjectContext: true
 ---

@@ -11,8 +11,8 @@ test.after(() => {
   else process.env.PI_CODING_AGENT_DIR = originalAgentDir;
   rmSync(agentDir, {recursive:true, force:true});
 });
-import multiCodex, {createCodexAlias} from './index.ts';
-import {createAssistantMessageEventStream} from './stream.ts';
+import multiCodex, {createCodexAlias} from '../index.ts';
+import {createAssistantMessageEventStream} from '../stream.ts';
 function fixture() {
   const calls=[];
   const message={role:'assistant',provider:'openai-codex',model:'test',content:[],stopReason:'stop'};

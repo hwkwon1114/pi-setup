@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseRemaining, chooseAccount, createQuotaService, routeCodex, registerCodexRouter, AUTO_MODELS, CODEX_SLOTS, CACHE_MS } from './router.mjs';
+import { parseRemaining, chooseAccount, createQuotaService, routeCodex, registerCodexRouter, AUTO_MODELS, CODEX_SLOTS, CACHE_MS } from '../router.mjs';
 
 const now = 1_700_000_000_000;
 const limit = (primary = 20, secondary = 40) => ({ allowed: true, limit_reached: false,

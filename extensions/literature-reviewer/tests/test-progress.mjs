@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createProgress,progressUpdate} from './progress.mjs';
-import {planBudget,registerBudgetHooks} from './runtime.mjs';
+import {createProgress,progressUpdate} from '../progress.mjs';
+import {planBudget,registerBudgetHooks} from '../runtime.mjs';
 
 test('unbounded progress is explicit and missing scientific counts stay missing',()=>{
   const p=progressUpdate(0,{elapsedMs:900001},'/run',null);

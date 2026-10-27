@@ -3,7 +3,7 @@ name: council-claude
 description: Anthropic Claude advisor - Research conceptual architect, theoretical synthesis, and edge-case critic
 tools: read, grep, find, ls
 model: anthropic/claude-opus-5-5
-thinking: high
+thinking: max
 systemPromptMode: replace
 inheritProjectContext: true
 inheritSkills: false

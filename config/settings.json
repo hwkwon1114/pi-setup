@@ -20,7 +20,7 @@
     "antigravity/gemini-4-argon",
     "codex-auto/gpt-6-astra",
     "codex-auto/gpt-6.1-sol",
-    "codex-auto/gpt-6-luna",
+    "codex-auto/gpt-6.1-terra",
     "anthropic/claude-opus-5-5",
     "anthropic/claude-sonnet-5-5"
   ],
@@ -32,7 +32,19 @@
     "agentOverrides": {
       "astra-code-reviewer": {
         "model": "codex-auto/gpt-6-astra",
-        "thinking": "xhigh"
+        "thinking": "max"
+      },
+      "council-astra": {
+        "model": "codex-auto/gpt-6-astra",
+        "thinking": "max"
+      },
+      "council-claude": {
+        "model": "anthropic/claude-opus-5-5",
+        "thinking": "max"
+      },
+      "council-argon": {
+        "model": "antigravity/gemini-4-argon",
+        "thinking": "max"
       },
       "reviewer": {
         "model": "codex-auto/gpt-6-astra"

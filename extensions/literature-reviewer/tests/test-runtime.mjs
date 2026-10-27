@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { REVIEW_TIMEOUT_MS, CHILD_TIMEOUT_MS, MIN_CHILD_MS,
-  budgetFrom, planBudget, budgetNotice, registerBudgetHooks, collectArtifacts } from './runtime.mjs';
+  budgetFrom, planBudget, budgetNotice, registerBudgetHooks, collectArtifacts } from '../runtime.mjs';
 
 const now=1000000;
 test('coordinator has an explicit unbounded budget, not an absent/malformed budget',()=>{

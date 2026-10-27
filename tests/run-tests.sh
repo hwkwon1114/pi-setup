@@ -44,30 +44,28 @@ try:
             entry=overrides.get(model,{})
             if 'contextWindow' in entry or entry.get('maxTokens') != 32000:
                 bad.append(f'{provider} {model} must use catalog context and 32000 output cap')
-        luna=overrides.get('gpt-6-luna',{})
-        if 'contextWindow' in luna or luna.get('maxTokens') != 32000:
-            bad.append(f'{provider} Luna must use catalog context and 32000 output cap')
+        terra=overrides.get('gpt-6.1-terra',{})
+        if 'contextWindow' in terra or terra.get('maxTokens') != 32000:
+            bad.append(f'{provider} Terra must use catalog context and 32000 output cap')
     gemini=json.load(open(root/'config/models.json'))['providers']['antigravity']['modelOverrides'].get('gemini-3.8-flash',{})
     if 'contextWindow' in gemini or gemini.get('maxTokens') != 32000:
         bad.append('Gemini Flash must use catalog context and 32000 output cap')
     settings=json.load(open(root/'config/settings.json'))
-    if settings.get('defaultProvider') != 'openai-codex': bad.append('default provider must be Codex')
+    if settings.get('defaultProvider') != 'antigravity' or settings.get('defaultModel') != 'gemini-3.8-flash': bad.append('default model must be Antigravity Gemini Flash')
     if (root/'extensions/multi-openai').exists(): bad.append('legacy multi-openai extension must be retired')
     enabled=set(settings.get('enabledModels',[]))
     if any(re.match(r'openai(?:-\d+)?/', m) for m in enabled): bad.append('direct OpenAI models must not be enabled')
     roles=settings.get('subagents',{}).get('agentOverrides',{})
     role_targets = {
-        'worker': ('codex-auto/gpt-6.1-sol',),
-        'scout': ('codex-auto/gpt-6.1-sol',),
-        'researcher': ('codex-auto/gpt-6.1-sol',),
+        'worker': ('antigravity/gemini-3.8-flash',),
         'reviewer': ('codex-auto/gpt-6-astra',),
         'astra-code-reviewer': ('codex-auto/gpt-6-astra',),
         'oracle': ('codex-auto/gpt-6-astra',),
-        'evidence-auditor': ('codex-auto/gpt-6-astra',),
-        'literature-coordinator': ('openai-codex/gpt-6-astra',),
-        'literature-leaf': ('openai-codex/gpt-6.1-sol',),
-        'literature-reviewer': ('openai-codex/gpt-6-astra',),
+        'literature-coordinator': ('codex-auto/gpt-6-astra',),
+        'literature-leaf': ('codex-auto/gpt-6.1-sol',),
+        'literature-reviewer': ('codex-auto/gpt-6-astra',),
     }
+    if settings.get('subagents',{}).get('defaultModel') != 'codex-auto/gpt-6.1-sol': bad.append('default subagent model mismatch')
     for role, allowed in role_targets.items():
         actual = roles.get(role, {}).get('model')
         if actual not in allowed: bad.append(f'{role} model override mismatch')

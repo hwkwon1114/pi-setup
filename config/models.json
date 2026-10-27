@@ -8,7 +8,7 @@
         "gpt-6-astra": {
           "maxTokens": 32000
         },
-        "gpt-6-luna": {
+        "gpt-6.1-terra": {
           "maxTokens": 32000
         }
       }
@@ -31,7 +31,7 @@
         "gpt-6-astra": {
           "maxTokens": 32000
         },
-        "gpt-6-luna": {
+        "gpt-6.1-terra": {
           "maxTokens": 32000
         }
       }
@@ -44,7 +44,7 @@
         "gpt-6-astra": {
           "maxTokens": 32000
         },
-        "gpt-6-luna": {
+        "gpt-6.1-terra": {
           "maxTokens": 32000
         }
       }

@@ -1,6 +1,6 @@
 // Usage-aware selection only: never launch or retry a job from this module.
 export const AUTO_PROVIDER = 'codex-auto';
-export const AUTO_MODELS = ['gpt-6.1-sol', 'gpt-6-astra', 'gpt-6-luna'];
+export const AUTO_MODELS = ['gpt-6.1-sol', 'gpt-6-astra', 'gpt-6.1-terra'];
 export const CODEX_SLOTS = ['openai-codex', 'openai-codex-2', 'openai-codex-3'];
 export const CACHE_MS = 60_000;
 export const RESERVE_PERCENT = 5;
