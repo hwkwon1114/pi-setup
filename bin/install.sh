@@ -89,6 +89,17 @@ if [ "$RESOURCES_ONLY" = 0 ]; then
     say "error: Python 3 required for safe configuration composition" >&2; exit 1
   fi
   for rel in "${PI_LINK_FILES[@]}"; do link_or_copy "$rel" "${rel##*/}"; done
+  # Context-manager (billion-context-pi) global defaults live at ~/.pi/acp.json,
+  # outside the agent home. Install there only for the default agent home, or
+  # where PI_SETUP_ACP_DIR points (tests/custom layouts); project .pi/acp.json
+  # files still override it.
+  ACP_DIR="${PI_SETUP_ACP_DIR:-}"
+  if [ -z "$ACP_DIR" ] && [ "$DST" = "$HOME/.pi/agent" ]; then ACP_DIR="$HOME/.pi"; fi
+  if [ -n "$ACP_DIR" ]; then
+    DST="$ACP_DIR" link_or_copy config/acp.json acp.json
+  else
+    say "  skip acp.json (non-default agent home; set PI_SETUP_ACP_DIR to install it)"
+  fi
 fi
 
 # --- directory payloads --------------------------------------------------------

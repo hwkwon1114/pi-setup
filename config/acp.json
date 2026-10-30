@@ -1,0 +1,4 @@
+{
+  "compress": { "nudgeGrowthTokens": 150000 },
+  "preserveRecentTools": ["read"]
+}

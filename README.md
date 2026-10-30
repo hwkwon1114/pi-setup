@@ -86,6 +86,7 @@ instructions belong on that machine, not in shared configuration.
 | `config/AGENTS.md` | Global working preferences (training, figures, literature routing) |
 | `config/settings.json` | Theme, default model/provider, `packages`, `enabledModels` |
 | `config/models.json` | Output caps for Codex account slots and Antigravity; context windows come from the model catalog |
+| `config/acp.json` | Global context-manager (billion-context-pi) defaults, installed to `~/.pi/acp.json` (outside the agent home); project `.pi/acp.json` overrides it |
 | `config/mcp.json` | Native MCP servers: `consensus`, `researchfasttrack` (codemode exposure; Consensus OAuth) |
 | `skills/` | Research, analysis, visualization, editable diagrams and maintenance skills |
 | `agents/` | Spec verifier (Astra), scientific critic (Argon), council advisors and literature-reviewer bridge |

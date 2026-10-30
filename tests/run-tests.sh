@@ -109,6 +109,8 @@ T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 check "install into scratch dir" "./bin/install.sh --dest='$T'"
 check "installed AGENTS.md" "[ -f '$T/AGENTS.md' ]"
 check "installed skills/pdf-read" "[ -f '$T/skills/pdf-read/SKILL.md' ]"
+check "acp.json skipped for non-default home" "[ ! -e '$T/acp.json' ] && [ ! -e \"\$(dirname '$T')/acp.json\" ]"
+check "acp.json installed to PI_SETUP_ACP_DIR" "mkdir -p '$T/acphome' && PI_SETUP_ACP_DIR='$T/acphome' ./bin/install.sh --dest='$T/acpagent' && cmp -s config/acp.json '$T/acphome/acp.json'"
 check "installed role skill" "[ -f '$T/roles/literature-reviewer/skills/research-ideas/SKILL.md' ]"
 check "rerun is idempotent" "./bin/install.sh --dest='$T'"
 check "unknown flag rejected" "! ./bin/install.sh --nope"
