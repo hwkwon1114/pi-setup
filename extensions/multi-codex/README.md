@@ -39,8 +39,8 @@ returned, **not** silently retried on another account. No jobs, tool calls or
 partial outputs are replayed by this extension. A later explicit prompt/resume
 can select an account again. No fallback from Astra to Sol is implemented.
 
-Portable and local settings enable this for workers/scouts/researchers/oracles,
-reviewers and `astra-code-reviewer`; the default for other unpinned Pi agents is
+Portable and local settings enable this for workers, reviewers, the
+`verifier` and literature roles; the default for other unpinned Pi agents is
 Auto Sol. Child-only loading is configured with
 `subagents.defaultSubagentOnlyExtensions`, preserving ambient extensions.
 For a nonstandard agent directory, adjust that configured path. Explicit agent

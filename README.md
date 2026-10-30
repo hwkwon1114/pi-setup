@@ -88,7 +88,8 @@ instructions belong on that machine, not in shared configuration.
 | `config/models.json` | Output caps for Codex account slots and Antigravity; context windows come from the model catalog |
 | `config/mcp.json` | Native MCP servers: `consensus`, `researchfasttrack` (codemode exposure; Consensus OAuth) |
 | `skills/` | Research, analysis, visualization, editable diagrams and maintenance skills |
-| `agents/` | Astra code reviewer and literature-reviewer bridge definitions |
+| `agents/` | Spec verifier (Astra), scientific critic (Argon), council advisors and literature-reviewer bridge |
+| `packages/lab/` | `job_start`/`job_list` tools: tracked detached jobs under a project `.pi/lab.json` GPU policy |
 | `extensions/literature-reviewer/` | `literature_review` delegation tool (Approach B: hybrid subagent integration & FleetView) |
 | [`extensions/multi-codex/`](extensions/multi-codex/README.md) | Native Codex OAuth slots, account status in footer and quota-aware virtual routing: `/codex-add`, `/codex-status`, `/codex-switch`, `/codex-auto-status` |
 | `extensions/usage-limits.ts` | `/usage`, response-header limits and active Codex usage; display only, native compaction |
@@ -99,10 +100,10 @@ instructions belong on that machine, not in shared configuration.
 
 ## Codex / ChatGPT accounts
 
-Codex is the standard OpenAI subscription route. Both personal and portable
-settings default to `openai-codex/gpt-6.1-sol`; configured agents use Codex,
-with Astra for review/coordinator roles and Sol for workers/leaves. Antigravity
-remains available. Pi subagents use `codex-auto/*` to select slots 1–3 by quota
+Codex is the standard OpenAI subscription route. The main session defaults to
+`anthropic/claude-opus-5-5`; configured subagents use Codex, with Astra for
+verifier/reviewer/coordinator roles, Terra for workers and Sol for literature
+leaves and the subagent default. The critic uses Antigravity Gemini Argon. Pi subagents use `codex-auto/*` to select slots 1–3 by quota
 before new turns, retaining exact physical model/thinking. Continuations and
 retries remain pinned; no failed job is silently relaunched. The separate
 literature runner remains physically pinned. See the [routing contract and
@@ -172,18 +173,18 @@ sessions may retain the old controller/model until then.
 
 ## Research workflow extensions and context runtime
 
-Shared `config/settings.json` declares unpinned npm packages:
-`@juicesharp/rpiv-ask-user-question` (interactive decisions), `pi-goal-x`
-(persistent investigation task plans and autonomous continuation), and
-`@dietrichgebert/ponytail` (the official Pi extension and its skills for lean
-coding). `pi update --extensions` refreshes them to the latest published npm
-versions. These declarations track published releases, not unreleased GitHub
-commits.
+Shared `config/settings.json` declares these packages: `pi-subagents`
+(delegation, async runs), `pi-antigravity` (Gemini provider, search, images),
+`@juicesharp/rpiv-ask-user-question` (interactive decisions),
+`git:github.com/picassio/pi-cc-patch`, and the local `packages/research-runtime`
+(context management) and `packages/lab` (`job_start`/`job_list`: detached jobs
+with GPU assignment from the nearest project `.pi/lab.json`).
+`pi update --extensions` refreshes the npm/git packages to their latest releases.
 
-To match this setup's preference to avoid a second completion review, disable
-the optional goal auditor in `/goal-settings` on each machine. This setting is
-stored locally by pi-goal-x and is not part of the shared Pi settings sync.
-The Astra pre-execution review and project scientific records remain authoritative.
+Research work runs through project spec cards: `agents/verifier.md` (Astra,
+read-only spec verifier before expensive runs) and `agents/critic.md` (Gemini
+Argon, read-only scientific critic) are the independent reviewers; see
+`config/AGENTS.md`. `pi-goal-x` and `ponytail` were retired.
 
 `packages/research-runtime` contains only the standalone `billion-context-pi`
 context extension; the Todo integration has been removed. After installing this

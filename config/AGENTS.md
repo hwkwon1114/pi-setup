@@ -1,52 +1,33 @@
 # Working preferences
 
-Keep instructions and deliverables minimal: shared defaults here, project facts in project instructions, methods in skills. Prefer one authoritative source; preserve evidence and researcher notes. Report actual checks, limits and decisions left to the researcher.
+Project facts live in project `AGENTS.md`; methods in skills. Keep one authoritative record per fact. Be concise; report actual checks, limits and decisions left to the researcher.
 
-## Research-first simplicity
+## Research work: cards
 
-Prefer the smallest implementation that answers the approved scientific question. Reuse existing tools; add orchestration, wrappers, receipt systems or approval layers only to prevent a concrete failure that existing tools cannot adequately handle. Do not invent iteration/call quotas or arbitrary wall deadlines as researcher approval gates.
+- A **card** (`cards/<ID>.md`, from the project template) is the unit of scientific work and approval: question, decision each outcome drives, formulas (F1…), known-answer checks, metrics/gates, data and information access, stopping rule, compute plan. The researcher approves the card; `DECISIONS.md` records decisions with date and rationale.
+- At session start/resume, read the project objective, the active card and `DECISIONS.md`. Summaries, queues and old approvals are not authorization.
+- Within an approved card, work end-to-end without procedural check-ins: implement → known-answer tests → **verifier** → run → analyse → report. Ask only for changes to the card's question, formulas, metrics/gates, data access or substantial compute, or for genuine blockers.
+- Do not substitute a proxy metric for the card's target; negative and non-identifiable results are valid outcomes. Never tune on final tests or relax a gate to pass.
 
-Every test must protect numerical correctness, information fairness, result validity or a credible operational risk. Consolidate redundant checks, reuse unchanged verification evidence with its limits, and rerun infrastructure tests when relevant paths change—not routinely during scientific iteration. Fix ordinary implementation problems autonomously; ask only about consequential scope/recipe changes, substantial resource changes or genuine blockers. Preserve hardware/memory safeguards, scientific stopping rules, required independent review and frozen running experiments.
+## Verification gate
 
-## Opening deliverables
+- Before training, sweeps or expensive simulation on new/changed code, run the `verifier` subagent (Astra, read-only) against the card. `BLOCKING ISSUES` must be fixed and re-verified; absent/failed/stale verification is not approval. Quick edits and bounded CPU fixtures need no verifier.
+- If Astra is quota-blocked, report it; use Sol only with approval.
+- An async verifier or job is a dependency wait: return control, do not poll; the completion wakes the session.
 
-In Pi within VS Code's remote terminal, offer copyable `code /absolute/path` commands, not file hyperlinks. Verify files exist and quote paths containing spaces. Ordinary web links are fine.
+## Jobs and GPUs
 
-Task trackers are navigation aids, not authorization or scientific evidence. Keep project records authoritative for research scope, decisions, limits and evidence.
+- Launch long-running work with `job_start` (not `nohup`/`&`); it applies the project `.pi/lab.json` GPU policy, records code hashes and wakes the session on exit. A zero exit code is not evidence of correct results.
+- Spread independent fits one per GPU across permitted GPUs. Do not change running experiments to adopt new settings.
 
-## Research direction and restored context
+## Delegation
 
-- For research work, read the authoritative objective and active investigation record at session start, after compaction/resumption or branch changes, and before a new stage or expensive execution. Restore the scientific target, approved scope, information/resource limits, rejected directions, unresolved conflicts and next authorized action; a summary or historical queue is not authorization.
-- Before implementing a new investigation, connect its question and possible outcomes to a scientific decision. Distinguish direct evidence, necessary supporting diagnostics and separate questions. Do not replace the target with a convenient proxy metric; non-identifiability and negative results can be valid outcomes. Ordinary maintenance needs no scientific protocol.
-- Keep one stable objective entry point and one current investigation record, reusing existing documents. Methods belong in skills. Update objectives only from explicit researcher direction, retaining provenance; resolve consequential conflicts rather than silently choosing a historical recipe.
-- Give delegates the objective/state paths, task-to-objective connection, non-goals, edit boundary, information/resource limits and expected decision. Delegates return evidence or proposals, not expanded authorization.
+- Implementation: `worker` (Terra). Verification: `verifier` (Astra). Literature: `literature_review` for multi-paper work, with bounded scope and absolute paths. Delegates get the card path, edit boundary and expected output; they return evidence, not authorization.
+- A finished child is not a verified result; inspect its output.
 
-## Experiments
+## Figures and deliverables
 
-- Use the scientific investigation, not each implementation step, as the unit of approval and reporting. Once its question and scope are agreed, own the end-to-end work: bounded planning, implementation, correctness checks, required independent reviews and fixes, development iterations, planned final evaluation, analysis and reporting. Record permitted alternatives/refinements, information/resource limits and stopping rules in the existing investigation/protocol before execution.
-- Treat small fixtures and ordinary debugging as internal checkpoints; do not end the investigation or request another procedural approval merely because a helper or test passes. Give brief progress updates, then continue within scope until the declared scientific decision, stopping rule or genuine blocker. Report the result after iterations, including negative outcomes and limits—not just test counts. Fixture-only approval does not authorize a campaign or renew spent budgets.
-- Use scientific early stopping and risk-appropriate resource protection; record actual researcher/cluster limits in the plan or existing launcher. Do not manufacture numeric deadlines or retry quotas. Ask before an unplanned restart from scratch, a scientific recipe change outside the recorded alternatives, or sealed-test release outside the predeclared policy. Stop and consult the researcher for unrecoverable failures, allocation overruns or fundamental changes in direction. Do not tune on consumed final tests or weaken acceptance criteria to obtain success.
+- Lead with held-out aggregates and error distributions; disclose example selection. Best/worst cases are labelled diagnostics.
+- In VS Code remote, give `code /absolute/path` commands for files.
 
-## GPU workload scheduling
-
-Researcher preference recorded 2026-10-10: distribute independent training fits/jobs across available, project-permitted GPUs rather than defaulting to a sequential single-GPU queue. Check availability first; use one fit per GPU, explicit `CUDA_VISIBLE_DEVICES`, isolated outputs and matched scientific settings. Respect project GPU exclusions, memory/resource limits and stage dependencies. Apply this to future scheduling; do not interrupt or change frozen running experiments or their identity-bound instructions merely to adopt it.
-
-## Research figures
-
-Lead with full held-out aggregates and error distributions, respecting dependence. Use matched, error-independently selected examples; disclose selection and omissions. Best/worst cases are labeled diagnostics, not representative comparisons.
-
-## Code reviews
-
-- An asynchronous review is a dependency wait, not a reason to pause the goal. Never call `update_goal(status="paused")` merely to suppress checkpoints while a reviewer is running. Keep the goal active, return control for native completion notification, and avoid polling or duplicate launches. On completion, inspect the verdict, repair ordinary findings within scope, and continue already-authorized work without asking for `/goal-resume` or renewed approval. Review still gates scientific execution. If automatic checkpoints recur, treat that as a scheduling issue—not a user approval requirement. Reserve goal pauses for explicit user requests or genuine decisions outside approved scope; report failed/quota-blocked reviews as actual blockers.
-- Before neural-network training, long-running compute jobs or expensive simulations involving newly written/modified code, complete an independent pre-execution review with `astra-code-reviewer` / `openai-codex/gpt-6-astra`. Quick edits, small exploratory checks and explicitly bounded correctness fixtures do not require reviews; repeated fixtures must not become an unreviewed training campaign. Declare their scope and practical resource safeguards before execution.
-- Wait for the verdict and resolve launch-blocking findings before execution. Review scientific relevance as well as code, tests, data access, numerical standards, stopping and resumability under the actual project contract. Record reviewed code/config/data/design identities and scope in the existing run review; consequential changes require reassessment. An absent, failed or stale review is not approval. `APPROVED_WITH_CAVEATS` permits launch only with no unresolved launch blockers and with limits recorded. Approval does not expand scope or release sealed tests.
-- If Astra reaches its temporary subscription usage limit, report the quota block; use Sol (`openai-codex/gpt-6.1-sol`) only if approved, otherwise await reset. These are instruction-based gates, not a runtime launch guarantee.
-
-## Literature
-
-- Delegate substantive multi-paper reviews, updates, research gaps and direction comparisons through `literature_review`; announce delegation and pass bounded scope, constraints, existing evidence and absolute paths. A single supplied paper can be summarized in-main; configuration, isolated-paper explanations and saved-material reorganization may also stay in-main. Respect explicit no-subagent requests; do not duplicate reviews or bypass dispatch caps.
-- Extend the authoritative review in place, preserving IDs, provenance, qualifications, notes and history. Separate reviews need a distinct topic or explicit request. A finished child is not a verified update; incomplete integration/rendering stays partial. Reorganization needs no new search.
-- If unavailable, suggest `/reload` or restart. On failure/exhaustion, report blockers and saved partial work; ask before switching to in-main review. Never claim an unrun delegation.
-- Research-ideas and literature MCPs are role-only: no in-main loading or shell bypass. Explain this limitation for explicit in-main requests before proposing configuration changes.
-
-Task authorization does not permit unrequested package installations, credential/configuration changes, private uploads, Zotero writes, or destructive file deletions. Experimental execution requested by the user is authorized to run autonomously within project compute guidelines. These instructions guide behavior; they are not enforced security controls.
+Task authorization does not cover package installs, credential/config changes, private uploads, Zotero writes or destructive deletions.

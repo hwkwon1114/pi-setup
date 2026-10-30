@@ -11,19 +11,19 @@ ROOT = Path(__file__).resolve().parents[1]
 def policy_errors(global_text, skill_text, guide_text, reviewer_text):
     errors = set()
     requirements = {
-        "restore": (global_text, "after compaction/resumption"),
-        "relevance": (global_text, "Before implementing a new investigation"),
-        "wait": (global_text, "Wait for the verdict and resolve launch-blocking findings before execution."),
-        "stale": (global_text, "An absent, failed or stale review is not approval."),
-        "fixture": (global_text, "repeated fixtures must not become an unreviewed training campaign"),
-        "review-routing": (global_text, "only if approved, otherwise await reset"),
+        "restore": (global_text, "At session start/resume"),
+        "authorization": (global_text, "Summaries, queues and old approvals are not authorization."),
+        "wait": (global_text, "`BLOCKING ISSUES` must be fixed and re-verified"),
+        "stale": (global_text, "absent/failed/stale verification is not approval."),
+        "fixture": (global_text, "Quick edits and bounded CPU fixtures need no verifier."),
+        "review-routing": (global_text, "use Sol only with approval"),
         "skill-link": (skill_text, "[research control](references/research-control.md)"),
         "gate-a": (guide_text, "Gate A: scientific alignment before implementation"),
         "gate-b": (guide_text, "Gate B: execution readiness"),
         "researcher-change": (guide_text, "Explicit researcher changes can"),
         "handoff": (guide_text, "Pass delegates the objective/state paths and versions"),
-        "review-blockers": (reviewer_text, "Use `CHANGES_REQUESTED` for unresolved launch blockers."),
-        "numerical-contract": (reviewer_text, "actual project's"),
+        "review-blockers": (reviewer_text, "`Verdict: BLOCKING ISSUES`"),
+        "card-first": (reviewer_text, "Read the card before the code."),
     }
     for key, (text, required) in requirements.items():
         if required not in text:
@@ -44,7 +44,7 @@ class ResearchControlSourceTests(unittest.TestCase):
         cls.global_text = (ROOT / "config/AGENTS.md").read_text()
         cls.skill_text = (ROOT / "skills/research-workflow/SKILL.md").read_text()
         cls.guide_text = (ROOT / "skills/research-workflow/references/research-control.md").read_text()
-        cls.reviewer_text = (ROOT / "agents/astra-code-reviewer.md").read_text()
+        cls.reviewer_text = (ROOT / "agents/verifier.md").read_text()
 
     def errors(self, global_text=None, skill_text=None, guide_text=None, reviewer_text=None):
         return policy_errors(
@@ -59,12 +59,12 @@ class ResearchControlSourceTests(unittest.TestCase):
 
     def test_missing_wait_rejected(self):
         text = self.global_text.replace(
-            "Wait for the verdict and resolve launch-blocking findings before execution.", ""
+            "`BLOCKING ISSUES` must be fixed and re-verified", ""
         )
         self.assertIn("wait", self.errors(global_text=text))
 
     def test_missing_stale_guard_rejected(self):
-        text = self.global_text.replace("An absent, failed or stale review is not approval.", "")
+        text = self.global_text.replace("absent/failed/stale verification is not approval.", "")
         self.assertIn("stale", self.errors(global_text=text))
 
     def test_environment_leak_rejected(self):
@@ -80,7 +80,7 @@ class ResearchControlSourceTests(unittest.TestCase):
 
     def test_fixture_boundary_preserved(self):
         self.assertIn("fixture", self.errors(global_text=self.global_text.replace(
-            "repeated fixtures must not become an unreviewed training campaign", ""
+            "Quick edits and bounded CPU fixtures need no verifier.", ""
         )))
 
     def test_cases_are_prompts_not_answers(self):

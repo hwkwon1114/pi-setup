@@ -16,6 +16,8 @@ metadata:
 
 Help find the next useful question, idea or piece of evidence. Anchor the work in the user's intent, not in one discipline, method or mandatory sequence.
 
+If the project uses spec cards (`cards/TEMPLATE.md`, `DECISIONS.md`), they are the authoritative experiment plan, approval and verification record: draft experiments as cards, and do not keep a parallel protocol or investigation record. Use this skill for framing and evidence judgement around them.
+
 ## Orient without creating paperwork
 
 Read project instructions and the relevant existing question, notes and evidence. Establish what the user wants to understand or change, what is uncertain, and the next useful action. A provisional question is enough for exploration; do not demand an estimand or experiment protocol before thinking.

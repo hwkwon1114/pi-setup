@@ -8,14 +8,15 @@ import { pathToFileURL } from 'node:url';
 
 const config=JSON.parse(fs.readFileSync(new URL('../config/settings.json',import.meta.url),'utf8'));
 test('portable routing preserves configured providers and models',()=>{
- assert.equal(config.defaultProvider,'antigravity');
- assert.equal(config.defaultModel,'gemini-3.8-flash');
+ assert.equal(config.defaultProvider,'anthropic');
+ assert.equal(config.defaultModel,'claude-opus-5-5');
  assert(!fs.existsSync(new URL('../extensions/multi-openai',import.meta.url)));
  assert(config.packages.includes('npm:pi-subagents@latest'));
  assert(config.packages.includes('npm:pi-antigravity@latest'));
  assert(config.packages.includes('npm:@juicesharp/rpiv-ask-user-question'));
- assert(config.packages.includes('npm:pi-goal-x'));
- assert(config.packages.includes('npm:@dietrichgebert/ponytail'));
+ assert(config.packages.includes('./packages/lab'));
+ assert(!config.packages.includes('npm:pi-goal-x'));
+ assert(!config.packages.includes('npm:@dietrichgebert/ponytail'));
  const runtime=JSON.parse(fs.readFileSync(new URL('../packages/research-runtime/package.json',import.meta.url),'utf8'));
  assert(!runtime.dependencies?.['@juicesharp/rpiv-todo']);
  assert(!runtime.pi.extensions.includes('./todo.ts'));
@@ -23,14 +24,16 @@ test('portable routing preserves configured providers and models',()=>{
  for(const role of Object.values(config.subagents.agentOverrides)) if(role.model) {
   assert(config.enabledModels.includes(role.model));
  }
- assert.equal(config.subagents.agentOverrides.worker.model,'antigravity/gemini-3.8-flash');
+ assert.equal(config.subagents.agentOverrides.worker.model,'codex-auto/gpt-6.1-terra');
  assert.equal(config.subagents.agentOverrides['literature-coordinator'].model,'codex-auto/gpt-6-astra');
  assert.equal(config.subagents.agentOverrides['literature-leaf'].model,'codex-auto/gpt-6.1-sol');
  assert.equal(config.subagents.defaultModel,'codex-auto/gpt-6.1-sol');
  assert.deepEqual(config.subagents.defaultSubagentOnlyExtensions,['~/.pi/agent/extensions/multi-codex/index.ts']);
- assert.equal(config.subagents.agentOverrides['astra-code-reviewer'].model,'codex-auto/gpt-6-astra');
- const reviewer=fs.readFileSync(new URL('../agents/astra-code-reviewer.md',import.meta.url),'utf8');
- assert.match(reviewer,/^model: codex-auto\/gpt-6-astra$/m);
+ assert.equal(config.subagents.agentOverrides.verifier.model,'codex-auto/gpt-6-astra');
+ const verifier=fs.readFileSync(new URL('../agents/verifier.md',import.meta.url),'utf8');
+ assert.match(verifier,/^model: codex-auto\/gpt-6-astra$/m);
+ const critic=fs.readFileSync(new URL('../agents/critic.md',import.meta.url),'utf8');
+ assert.match(critic,/^model: antigravity\/gemini-4-argon$/m);
 });
 
 let piDir=process.env.PI_CODEX_TEST_PI_DIR;

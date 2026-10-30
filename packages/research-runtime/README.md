@@ -1,9 +1,7 @@
 # Research runtime
 
 This local package isolates the standalone `billion-context-pi` extension from
-Pi's shared npm tree. The Todo integration has been removed; persistent task
-planning is provided by the separately declared `pi-goal-x` package in
-`config/settings.json`.
+Pi's shared npm tree. The Todo integration has been removed.
 
 After installing this setup on a new machine, install this package's local
 runtime dependency from the installed agent home (works for copy and link

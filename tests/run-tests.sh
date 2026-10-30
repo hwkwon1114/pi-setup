@@ -51,16 +51,16 @@ try:
     if 'contextWindow' in gemini or gemini.get('maxTokens') != 32000:
         bad.append('Gemini Flash must use catalog context and 32000 output cap')
     settings=json.load(open(root/'config/settings.json'))
-    if settings.get('defaultProvider') != 'antigravity' or settings.get('defaultModel') != 'gemini-3.8-flash': bad.append('default model must be Antigravity Gemini Flash')
+    if settings.get('defaultProvider') != 'anthropic' or settings.get('defaultModel') != 'claude-opus-5-5': bad.append('default model must be Anthropic Claude Opus')
     if (root/'extensions/multi-openai').exists(): bad.append('legacy multi-openai extension must be retired')
     enabled=set(settings.get('enabledModels',[]))
     if any(re.match(r'openai(?:-\d+)?/', m) for m in enabled): bad.append('direct OpenAI models must not be enabled')
     roles=settings.get('subagents',{}).get('agentOverrides',{})
     role_targets = {
-        'worker': ('antigravity/gemini-3.8-flash',),
+        'worker': ('codex-auto/gpt-6.1-terra',),
         'reviewer': ('codex-auto/gpt-6-astra',),
-        'astra-code-reviewer': ('codex-auto/gpt-6-astra',),
-        'oracle': ('codex-auto/gpt-6-astra',),
+        'verifier': ('codex-auto/gpt-6-astra',),
+        'critic': ('antigravity/gemini-4-argon',),
         'literature-coordinator': ('codex-auto/gpt-6-astra',),
         'literature-leaf': ('codex-auto/gpt-6.1-sol',),
         'literature-reviewer': ('codex-auto/gpt-6-astra',),

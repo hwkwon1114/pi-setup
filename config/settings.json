@@ -1,8 +1,8 @@
 {
   "theme": "light",
-  "defaultProvider": "antigravity",
-  "defaultModel": "gemini-3.8-flash",
-  "defaultThinkingLevel": "medium",
+  "defaultProvider": "anthropic",
+  "defaultModel": "claude-opus-5-5",
+  "defaultThinkingLevel": "high",
   "warnings": {
     "anthropicExtraUsage": false
   },
@@ -12,17 +12,17 @@
     "npm:pi-antigravity@latest",
     "./packages/research-runtime",
     "npm:@juicesharp/rpiv-ask-user-question",
-    "npm:pi-goal-x",
-    "npm:@dietrichgebert/ponytail"
+    "git:github.com/picassio/pi-cc-patch",
+    "./packages/lab"
   ],
   "enabledModels": [
     "antigravity/gemini-3.8-flash",
     "antigravity/gemini-4-argon",
     "codex-auto/gpt-6-astra",
     "codex-auto/gpt-6.1-sol",
-    "codex-auto/gpt-6.1-terra",
     "anthropic/claude-opus-5-5",
-    "anthropic/claude-sonnet-5-5"
+    "anthropic/claude-sonnet-5-5",
+    "codex-auto/gpt-6.1-terra"
   ],
   "subagents": {
     "defaultModel": "codex-auto/gpt-6.1-sol",
@@ -30,10 +30,6 @@
       "~/.pi/agent/extensions/multi-codex/index.ts"
     ],
     "agentOverrides": {
-      "astra-code-reviewer": {
-        "model": "codex-auto/gpt-6-astra",
-        "thinking": "max"
-      },
       "council-astra": {
         "model": "codex-auto/gpt-6-astra",
         "thinking": "max"
@@ -47,13 +43,12 @@
         "thinking": "max"
       },
       "reviewer": {
-        "model": "codex-auto/gpt-6-astra"
-      },
-      "oracle": {
-        "model": "codex-auto/gpt-6-astra"
+        "model": "codex-auto/gpt-6-astra",
+        "thinking": "max"
       },
       "worker": {
-        "model": "antigravity/gemini-3.8-flash"
+        "model": "codex-auto/gpt-6.1-terra",
+        "thinking": "xhigh"
       },
       "literature-coordinator": {
         "model": "codex-auto/gpt-6-astra",
@@ -66,8 +61,15 @@
       "literature-reviewer": {
         "model": "codex-auto/gpt-6-astra",
         "thinking": "xhigh"
+      },
+      "verifier": {
+        "model": "codex-auto/gpt-6-astra",
+        "thinking": "max"
+      },
+      "critic": {
+        "model": "antigravity/gemini-4-argon",
+        "thinking": "max"
       }
     }
-  },
-  "lastChangelogVersion": "1.3.0"
+  }
 }
