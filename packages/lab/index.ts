@@ -4,13 +4,21 @@
  * - `job_start` tool: launches a detached shell job (survives Pi restarts), assigns GPUs under the nearest `.pi/lab.json`
  *   policy (allowed GPUs, max per job; a GPU is free only if no compute process runs on it and no lab job reserves it), records provenance
  *   (command, sha256 of declared input files, git HEAD/dirty state of the cwd repo), optional `after` dependency.
- * - Wakes the session that started a job when it exits (sendMessage triggerTurn), with exit code, duration, log tail and the
- *   job's `on_done` instruction. Other sessions only see it in /jobs and the footer.
+ * - Wakes the session that started a job, or a session bound to the job's card, when the job exits (sendMessage triggerTurn),
+ *   with exit code, duration, log tail and the job's `on_done` instruction; jobs that finish together share one wake-up.
+ *   Any session may record an exit, but only an owning session reports it, claimed by exclusively creating <id>.notified
+ *   (so concurrent owners report once). Other sessions get a transient UI notice and never consume the report. A session
+ *   that starts or resumes reports its own jobs that finished meanwhile (display only, no automatic turn).
+ * - `after` runs a job only if its predecessor exits 0 (else exit 97). A wrapper that dies without an exit code (killed,
+ *   OOM, reboot) is marked `lost` (<id>.lost) and given sentinel exit code 99; a waiting dependent also stops (exit 98) when
+ *   the predecessor's wrapper process is gone. So killing a job releases its queue instead of leaving dependents reserved
+ *   forever. A dependent takes over its predecessor's GPU only if no other active job already waits on it there.
  * - `job_list` tool and `/jobs` command; footer status "lab: N running".
  * - Guard: blocks bash commands that set CUDA_VISIBLE_DEVICES to a GPU outside the policy.
  *
- * - State block: before every agent run, injects a `lab_state` system-prompt section re-read from files: the nearest
- *   RESEARCH_STATE.md (dashboard), the session's active card (path + Status/Stage lines) and running/queued lab jobs.
+ * - State block: before every agent run, injects two system-prompt sections re-read from files: `lab_state` (the nearest
+ *   RESEARCH_STATE.md dashboard and the session's active card path + Status/Stage lines) and `lab_jobs` (running/queued
+ *   jobs). Pi re-sends only a changed section, so a job transition costs a short `lab_jobs` delta, not the dashboard.
  *   Files stay authoritative; this only keeps them in view when the conversation is compressed.
  * - `/card <ID>`: starts a fresh session bound to card <ID> (custom entry `lab-card`) and pre-fills a kickoff prompt;
  *   `/card <ID> here` binds the current session; `/card` lists cards. Jobs tagged with the active card wake that session
@@ -32,6 +40,9 @@ interface Job {
 	status: "queued" | "running" | "done" | "failed" | "lost"; exit?: number; inputs?: Record<string, string>;
 	git?: { head?: string; dirty?: string[] }; notified?: boolean;
 }
+const FINISHED = new Set<Job["status"]>(["done", "failed", "lost"]);
+/** Exit codes written by the lab itself: predecessor failed, predecessor vanished, wrapper lost. */
+export const EXIT = { depFailed: 97, depVanished: 98, lost: 99 } as const;
 
 function findPolicy(cwd: string): { policy?: Policy; root: string } {
 	for (let d = path.resolve(cwd); ; d = path.dirname(d)) {
@@ -63,9 +74,18 @@ export function readJobs(root: string): Job[] {
 	return jobs.sort((a, b) => a.started.localeCompare(b.started));
 }
 function writeJob(root: string, j: Job) {
-	const f = path.join(jobsDir(root), `${j.id}.json`); fs.writeFileSync(f + ".tmp", JSON.stringify(j, null, 1)); fs.renameSync(f + ".tmp", f);
+	// Unique temp name: several Pi processes may rewrite one job concurrently; each rename is atomic and the last one wins.
+	const f = path.join(jobsDir(root), `${j.id}.json`), tmp = `${f}.${process.pid}.${Math.random().toString(36).slice(2, 8)}.tmp`;
+	fs.writeFileSync(tmp, JSON.stringify(j, null, 1)); fs.renameSync(tmp, f);
 }
 const alive = (pid?: number) => { if (!pid) return false; try { process.kill(pid, 0); return true; } catch { return false; } };
+/** The job's wrapper (`bash <base>.sh`) still runs. Uses the command line where /proc exists, so a reused pid or zombie is not alive. */
+function wrapperAlive(j: Job): boolean {
+	if (!alive(j.pid)) return false;
+	let cmd: string;
+	try { cmd = fs.readFileSync(`/proc/${j.pid}/cmdline`, "utf8"); } catch { return true; } // no /proc (macOS): trust kill(0)
+	return cmd.includes(j.exitFile.replace(/\.exit$/, ".sh"));
+}
 const sha = (f: string) => createHash("sha256").update(fs.readFileSync(f)).digest("hex");
 const dur = (a: string, b?: string) => { const s = Math.round(((b ? Date.parse(b) : Date.now()) - Date.parse(a)) / 1000); return `${Math.floor(s / 3600)}h${String(Math.floor((s % 3600) / 60)).padStart(2, "0")}m`; };
 const tail = (f: string, n = 15) => { try { return fs.readFileSync(f, "utf8").split("\n").slice(-n - 1).join("\n").slice(-3000); } catch { return "(no log)"; } };
@@ -77,19 +97,101 @@ function gpuBusy(): Set<number> {
 	return new Set(q("--query-compute-apps=gpu_uuid,pid").map(([u]) => idx.get(u)).filter((g): g is number => g !== undefined));
 }
 
-/** Refresh job states from exit files / pids. Returns jobs that newly finished. */
-function refresh(root: string): Job[] {
+/** Refresh job states from exit files / wrapper processes. Returns jobs that newly finished (as observed by this process). */
+export function refresh(root: string): Job[] {
 	const fin: Job[] = [];
 	for (const j of readJobs(root)) {
+		if (j.status === "lost") {
+			// Recorded lost without a sentinel (by an older lab version): backfill it so `after` dependents stop waiting.
+			if (!fs.existsSync(j.exitFile) && !wrapperAlive(j)) markLost(j);
+			continue;
+		}
 		if (j.status !== "running" && j.status !== "queued") continue;
+		// Wrapper gone and still no exit file after the liveness check: it can no longer write one, so the job is lost.
+		if (!fs.existsSync(j.exitFile) && !wrapperAlive(j) && !fs.existsSync(j.exitFile)) markLost(j);
 		if (fs.existsSync(j.exitFile)) {
-			const code = Number(fs.readFileSync(j.exitFile, "utf8").trim());
-			j.exit = code; j.status = code === 0 ? "done" : "failed"; j.ended = new Date(fs.statSync(j.exitFile).mtimeMs).toISOString();
+			const raw = fs.readFileSync(j.exitFile, "utf8").trim();
+			if (!/^-?\d+$/.test(raw)) continue; // still being written (old wrappers write `echo 97 > exit`): next poll
+			const lostMark = j.exitFile.replace(/\.exit$/, ".lost");
+			if (fs.existsSync(lostMark)) { j.status = "lost"; j.exit = undefined; j.ended = new Date(fs.statSync(lostMark).mtimeMs).toISOString(); }
+			else { const code = Number(raw); j.exit = code; j.status = code === 0 ? "done" : "failed"; j.ended = new Date(fs.statSync(j.exitFile).mtimeMs).toISOString(); }
 			writeJob(root, j); fin.push(j);
-		} else if (!alive(j.pid)) { j.status = "lost"; j.ended = new Date().toISOString(); writeJob(root, j); fin.push(j); }
-		else if (j.status === "queued" && fs.existsSync(j.log.replace(/\.log$/, ".started"))) { j.status = "running"; writeJob(root, j); }
+		} else if (j.status === "queued" && fs.existsSync(j.log.replace(/\.log$/, ".started"))) { j.status = "running"; writeJob(root, j); }
 	}
 	return fin;
+}
+
+/**
+ * Record a job whose wrapper died without an exit code: <base>.lost marks it (written first, so any reader of the sentinel
+ * also sees the marker), then the sentinel exit code is created atomically with its content (hard link of a complete temp
+ * file; never an empty file another session could read as 0). An existing exit file is kept.
+ */
+function markLost(j: Job) {
+	const base = j.exitFile.replace(/\.exit$/, "");
+	fs.writeFileSync(base + ".lost", new Date().toISOString() + "\n");
+	const tmp = `${base}.exit.${process.pid}.${Math.random().toString(36).slice(2, 8)}.tmp`;
+	fs.writeFileSync(tmp, `${EXIT.lost}\n`);
+	try { fs.linkSync(tmp, j.exitFile); }
+	catch (e) {
+		// No hard links on this filesystem: exclusive create (non-atomic content, tolerated by the readers' digit check).
+		if ((e as { code?: string }).code !== "EEXIST") { try { fs.writeFileSync(j.exitFile, `${EXIT.lost}\n`, { flag: "wx" }); } catch { /* exists */ } }
+	} finally { fs.rmSync(tmp, { force: true }); }
+}
+
+/**
+ * Claim the report of a finished job by exclusively creating <id>.notified, so that when several sessions own a job (its
+ * starter and sessions bound to its card) exactly one reports it. Older records use `notified: true` for "already reported".
+ */
+export function claimReport(root: string, j: Job, by: string): boolean {
+	if (j.notified === true) return false;
+	let won = true;
+	try { fs.writeFileSync(path.join(jobsDir(root), `${j.id}.notified`), `${by}\n`, { flag: "wx" }); } catch { won = false; }
+	// Record the flag either way (a concurrent rewrite may have dropped it), so later polls skip the job without a claim attempt.
+	j.notified = true;
+	try { writeJob(root, j); } catch { /* the claim file is authoritative */ }
+	return won;
+}
+
+/** Single-quote for bash: no expansion of `$`, backticks or backslashes. */
+const sq = (s: string) => `'${s.replace(/'/g, "'\\''")}'`;
+
+/**
+ * Detached wrapper for a job: optionally waits for its `after` predecessor, then runs <base>.cmd.sh and records the exit code
+ * atomically in <base>.exit. While waiting it gives up with 98 if the predecessor's wrapper process is gone without an exit
+ * code (pid and command line, so a reused pid or a zombie does not count), and with 97 if the predecessor exited non-zero.
+ */
+export function wrapperScript(base: string, cwd: string, after?: { id: string; base: string; pid?: number }, pollSeconds = 30): string {
+	const finish = (code: string) => `echo ${code} > ${sq(base + ".exit.tmp")}; mv ${sq(base + ".exit.tmp")} ${sq(base + ".exit")}`;
+	const stop = (code: number, msg: string) => `{ echo ${sq(msg)}; ${finish(String(code))}; exit 0; }`;
+	let wait = "";
+	if (after) {
+		const pexit = sq(after.base + ".exit");
+		// Predecessor alive = its pid still runs `bash <pred>.sh`: /proc where present (no `ps` needed), else ps, else kill -0.
+		const liveFn = after.pid
+			? "lab_alive() { if [ -d /proc/self ]; then [ -r \"/proc/$1/cmdline\" ] && tr '\\0' ' ' < \"/proc/$1/cmdline\" | grep -qF -- \"$2\"; " +
+				"elif command -v ps >/dev/null 2>&1; then ps -ww -p \"$1\" -o args= 2>/dev/null | grep -qF -- \"$2\"; else kill -0 \"$1\" 2>/dev/null; fi; }\n"
+			: "";
+		const gone = after.pid
+			? `  lab_alive ${after.pid} ${sq(after.base + ".sh")} || [ -f ${pexit} ] || ` +
+				stop(EXIT.depVanished, `dependency ${after.id} ended without an exit code (killed or lost)`) + "\n"
+			: "";
+		wait = `${liveFn}while [ ! -f ${pexit} ]; do\n${gone}  sleep ${pollSeconds}\ndone\n` +
+			`[ "$(cat ${pexit})" = 0 ] || ${stop(EXIT.depFailed, `dependency ${after.id} failed`)}\n`;
+	}
+	return `#!/bin/bash\n${wait}touch ${sq(base + ".started")}\ncd ${sq(cwd)}\nbash ${sq(base + ".cmd.sh")}\n${finish("$?")}\n`;
+}
+
+/**
+ * GPUs a new job may use: allowed, not reserved by an active lab job, no compute process. A job queued `after` a running or
+ * queued predecessor may take over the predecessor's GPU, unless another active job already waits on that predecessor there
+ * (otherwise both would start together on one GPU). A finished predecessor hands nothing over.
+ */
+export function pickGpus(allowed: number[], jobs: Job[], busy: Set<number>, pred?: Job): { free: number[]; reserved: number[] } {
+	const active = jobs.filter((j) => j.status === "running" || j.status === "queued");
+	const reserved = new Set(active.flatMap((j) => j.gpus));
+	const handover = new Set(pred && (pred.status === "running" || pred.status === "queued") ? pred.gpus : []);
+	for (const j of active) if (pred && j.after === pred.id) for (const g of j.gpus) handover.delete(g);
+	return { free: allowed.filter((g) => handover.has(g) || (!reserved.has(g) && !busy.has(g))), reserved: [...reserved] };
 }
 
 /** Project root = nearest ancestor containing RESEARCH_STATE.md. */
@@ -135,6 +237,36 @@ export function summarizeActive(act: Job[]): string {
 	return run.join("\n");
 }
 
+/**
+ * Per-turn prompt sections: `lab_state` (instructions, active card, dashboard; changes rarely) and `lab_jobs` (running and
+ * queued jobs; changes with every job transition). Separate sections keep the prompt delta of a job transition short.
+ */
+export function stateSections(cwd: string, activeCard?: string): { lab_state: string; lab_jobs: string } | undefined {
+	const proj = findProject(cwd);
+	if (!proj) return undefined;
+	let dash = "";
+	try { dash = fs.readFileSync(path.join(proj, "RESEARCH_STATE.md"), "utf8").trim(); } catch { return undefined; }
+	if (dash.length > 6000) dash = dash.slice(0, 6000) + "\n\u2026 (truncated; read RESEARCH_STATE.md)";
+	const cf = activeCard ? findCard(proj, activeCard) : undefined;
+	const card = activeCard
+		? (cf ? `Active card (this session): ${activeCard} \u2014 ${path.join(proj, cf)}\n${cardHeader(path.join(proj, cf))}` : `Active card: ${activeCard} (card file not found)`)
+		: "Active card: none bound (use /card <ID>); infer from the dashboard and ask if unclear.";
+	let jobs: string;
+	try {
+		const { root } = findPolicy(cwd);
+		// Stable text (no durations), so the section changes only when jobs do.
+		jobs = summarizeActive(readJobs(root).filter((j) => j.status === "running" || j.status === "queued"));
+	} catch { jobs = "(registry unreadable)"; }
+	return {
+		lab_state: [
+			"Re-read from files before this turn. Files are authoritative over conversation memory and compressed summaries.",
+			"Record anything needed later (commands, job IDs, decisions, numbers) in the card or DECISIONS.md, not only in chat.",
+			"", card, "", `--- ${path.join(proj, "RESEARCH_STATE.md")} ---`, dash,
+		].join("\n"),
+		lab_jobs: `Lab jobs running/queued:\n${jobs}`,
+	};
+}
+
 function line(j: Job) {
 	const g = j.gpus.length ? `gpu ${j.gpus.join(",")}` : "cpu";
 	const e = j.exit !== undefined ? ` exit=${j.exit}` : "";
@@ -146,52 +278,37 @@ export default function (pi: ExtensionAPI) {
 	let sessionId = "";
 	let activeCard: string | undefined;
 
-	const stateBlock = (cwd: string): string | undefined => {
-		const proj = findProject(cwd);
-		if (!proj) return undefined;
-		let dash = "";
-		try { dash = fs.readFileSync(path.join(proj, "RESEARCH_STATE.md"), "utf8").trim(); } catch { return undefined; }
-		if (dash.length > 6000) dash = dash.slice(0, 6000) + "\n\u2026 (truncated; read RESEARCH_STATE.md)";
-		const cf = activeCard ? findCard(proj, activeCard) : undefined;
-		const card = activeCard
-			? (cf ? `Active card (this session): ${activeCard} \u2014 ${path.join(proj, cf)}\n${cardHeader(path.join(proj, cf))}` : `Active card: ${activeCard} (card file not found)`)
-			: "Active card: none bound (use /card <ID>); infer from the dashboard and ask if unclear.";
-		let jobs = "";
-		try {
-			const { root } = findPolicy(cwd);
-			const act = readJobs(root).filter((j) => j.status === "running" || j.status === "queued");
-			// Stable text (no durations): the section is re-sent as a transcript delta only when it changes.
-			jobs = summarizeActive(act);
-		} catch { jobs = "(registry unreadable)"; }
-		return [
-			"Re-read from files before this turn. Files are authoritative over conversation memory and compressed summaries.",
-			"Record anything needed later (commands, job IDs, decisions, numbers) in the card or DECISIONS.md, not only in chat.",
-			"", card, "", `Lab jobs running/queued:\n${jobs}`, "", `--- ${path.join(proj, "RESEARCH_STATE.md")} ---`, dash,
-		].join("\n");
-	};
-
 	const report = (j: Job) =>
 		`[lab] Job ${j.id} "${j.name}"${j.card ? ` (card ${j.card})` : ""} ${j.status.toUpperCase()}` +
 		`${j.exit !== undefined ? ` exit=${j.exit}` : ""} after ${dur(j.started, j.ended)}. Log: ${j.log}\n` +
 		"```\n" + tail(j.log) + "\n```\n" +
-		(j.on_done ? `Planned next step (from job_start on_done): ${j.on_done}\n` : "") +
-		"Verify outputs before reporting; a zero exit code is not evidence the results are correct.";
+		(j.on_done ? `Planned next step (from job_start on_done): ${j.on_done}\n` : "");
+	const verify = "Verify outputs before reporting; a zero exit code is not evidence the results are correct.";
+	/** Jobs this session reports: those it started and those tagged with its bound card. */
+	const mine = (j: Job) => (!!sessionId && j.session === sessionId) || (!!activeCard && j.card?.toLowerCase() === activeCard.toLowerCase());
 
-	const poll = (ctx: ExtensionContext) => {
-		const { root } = findPolicy(ctx.cwd);
-		let fin: Job[] = [];
-		try { fin = refresh(root); } catch { return; }
-		for (const j of fin) {
-			if (j.notified) continue;
-			const mine = j.session === sessionId || (!!activeCard && j.card === activeCard);
-			j.notified = mine; writeJob(root, j);
-			if (mine) pi.sendMessage({ customType: "lab-job", content: report(j), display: true }, ctx.isIdle() ? { triggerTurn: true } : { deliverAs: "followUp", triggerTurn: true });
-			else if (ctx.hasUI) ctx.ui.notify(`lab: job ${j.id} ${j.status} (${j.name})`, j.status === "done" ? "info" : "warning");
-		}
-		if (ctx.hasUI) {
-			const act = readJobs(root).filter((j) => j.status === "running" || j.status === "queued");
-			ctx.ui.setStatus("lab", act.length ? `lab: ${act.filter((j) => j.status === "running").length} running, ${act.filter((j) => j.status === "queued").length} queued` : undefined);
-		}
+	/**
+	 * Record exits (any session may), then report this session's finished jobs that no owner has reported yet, whichever
+	 * session observed the exit; jobs that finish together share one message. At startup the report is display-only.
+	 * Other sessions' jobs only get a transient UI notice; their owners report them.
+	 */
+	const poll = (ctx: ExtensionContext, startup = false) => {
+		try {
+			const { root } = findPolicy(ctx.cwd);
+			const fin = refresh(root);
+			const jobs = readJobs(root);
+			const own = jobs.filter((j) => FINISHED.has(j.status) && !j.notified && mine(j) && claimReport(root, j, sessionId));
+			if (own.length) {
+				const msg = { customType: "lab-job", content: own.map(report).join("\n") + verify, display: true };
+				if (startup) pi.sendMessage(msg);
+				else pi.sendMessage(msg, ctx.isIdle() ? { triggerTurn: true } : { deliverAs: "followUp", triggerTurn: true });
+			}
+			if (ctx.hasUI) {
+				for (const j of fin) if (!mine(j)) ctx.ui.notify(`lab: job ${j.id} ${j.status} (${j.name})`, j.status === "done" ? "info" : "warning");
+				const act = jobs.filter((j) => j.status === "running" || j.status === "queued");
+				ctx.ui.setStatus("lab", act.length ? `lab: ${act.filter((j) => j.status === "running").length} running, ${act.filter((j) => j.status === "queued").length} queued` : undefined);
+			}
+		} catch { /* registry unreadable: retry at the next poll */ }
 	};
 
 	pi.on("session_start", async (_e, ctx) => {
@@ -202,24 +319,19 @@ export default function (pi: ExtensionAPI) {
 				if (e.type === "custom" && e.customType === "lab-card") activeCard = e.data?.card;
 		} catch { /* no branch */ }
 		if (ctx.hasUI) ctx.ui.setStatus("lab-card", activeCard ? `card: ${activeCard}` : undefined);
-		// Report jobs that finished while no session of theirs was running (display only; no automatic turn).
-		const { root } = findPolicy(ctx.cwd);
-		try {
-			refresh(root);
-			const missed = readJobs(root).filter((j) => ["done", "failed", "lost"].includes(j.status) && !j.notified);
-			for (const j of missed) { j.notified = true; writeJob(root, j); }
-			if (missed.length) pi.sendMessage({ customType: "lab-job", content: missed.map(report).join("\n\n"), display: true });
-		} catch { /* registry unreadable: ignore at startup */ }
+		// Report this session's jobs that finished while it was not running (display only), then poll every 30 s.
+		poll(ctx, true);
+		if (timer) clearInterval(timer);
 		timer = setInterval(() => poll(ctx), 30000);
-		poll(ctx);
 	});
 	pi.on("session_shutdown", async () => { if (timer) clearInterval(timer); timer = undefined; });
 
-	// Per-turn state block (system-prompt section; Pi appends a transcript delta only when it changes).
+	// Per-turn state (system-prompt sections; Pi appends a transcript delta only for a section that changed).
 	pi.on("before_agent_start", async (event, ctx) => {
-		const s = stateBlock(ctx.cwd);
-		if (s) event.systemPromptOptions.sections.lab_state = s;
-		else delete event.systemPromptOptions.sections.lab_state;
+		const sections = event.systemPromptOptions.sections;
+		const s = stateSections(ctx.cwd, activeCard);
+		if (s) Object.assign(sections, s);
+		else { delete sections.lab_state; delete sections.lab_jobs; }
 	});
 
 	pi.registerCommand("card", {
@@ -294,17 +406,16 @@ export default function (pi: ExtensionAPI) {
 			const n = p.gpus ?? 0; let gpus: number[] = [];
 			refresh(root);
 			const jobs = readJobs(root);
-			if (p.after && !jobs.find((j) => j.id === p.after)) throw new Error(`after: unknown job ${p.after}`);
+			const pred = p.after ? jobs.find((j) => j.id === p.after) : undefined;
+			if (p.after && !pred) throw new Error(`after: unknown job ${p.after}`);
+			if (pred && (pred.status === "failed" || pred.status === "lost")) throw new Error(`after: job ${pred.id} is already ${pred.status}; it cannot exit 0`);
 			if (/(export\s+)?CUDA_VISIBLE_DEVICES\s*=/.test(p.command)) throw new Error("Do not set CUDA_VISIBLE_DEVICES in the command; request gpus instead.");
 			if (n > 0) {
 				if (!policy) throw new Error("No .pi/lab.json GPU policy found above cwd; GPU jobs refused.");
 				if (n > policy.max_gpus_per_job) throw new Error(`Requested ${n} GPUs > max_gpus_per_job ${policy.max_gpus_per_job}`);
-				const reserved = new Set(jobs.filter((j) => j.status === "running" || j.status === "queued").flatMap((j) => j.gpus));
 				const busy = gpuBusy();
-				// A queued job may reuse the GPU of the job it waits for.
-				const pred = p.after ? jobs.find((j) => j.id === p.after) : undefined;
-				const free = policy.allowed_gpus.filter((g) => (pred?.gpus.includes(g)) || (!reserved.has(g) && !busy.has(g)));
-				if (free.length < n) throw new Error(`Not enough free GPUs: need ${n}, free ${free.join(",") || "none"} (reserved by lab jobs: ${[...reserved].join(",") || "none"}; GPUs with compute processes: ${[...busy].join(",") || "none"}).`);
+				const { free, reserved } = pickGpus(policy.allowed_gpus, jobs, busy, pred);
+				if (free.length < n) throw new Error(`Not enough free GPUs: need ${n}, free ${free.join(",") || "none"} (reserved by lab jobs: ${reserved.join(",") || "none"}; GPUs with compute processes: ${[...busy].join(",") || "none"}).`);
 				gpus = free.slice(0, n);
 			}
 			const id = `${new Date().toISOString().slice(5, 16).replace(/[-:T]/g, "")}-${Math.random().toString(36).slice(2, 6)}`;
@@ -316,11 +427,8 @@ export default function (pi: ExtensionAPI) {
 				git = { head: execFileSync("git", ["rev-parse", "HEAD"], { cwd, encoding: "utf8" }).trim(),
 					dirty: execFileSync("git", ["status", "--porcelain"], { cwd, encoding: "utf8" }).split("\n").filter(Boolean).slice(0, 200) };
 			} catch { git = undefined; }
-			const wait = p.after ? `while [ ! -f ${JSON.stringify(path.join(d, p.after + ".exit"))} ]; do sleep 30; done\n` +
-				`[ "$(cat ${JSON.stringify(path.join(d, p.after + ".exit"))})" = 0 ] || { echo "dependency ${p.after} failed"; echo 97 > ${JSON.stringify(base + ".exit")}; exit 0; }\n` : "";
 			fs.writeFileSync(base + ".cmd.sh", `#!/bin/bash\n${p.command}\n`);
-			fs.writeFileSync(base + ".sh", `#!/bin/bash\n${wait}touch ${JSON.stringify(base + ".started")}\n` +
-				`cd ${JSON.stringify(cwd)}\nbash ${JSON.stringify(base + ".cmd.sh")}\necho $? > ${JSON.stringify(base + ".exit.tmp")}; mv ${JSON.stringify(base + ".exit.tmp")} ${JSON.stringify(base + ".exit")}\n`);
+			fs.writeFileSync(base + ".sh", wrapperScript(base, cwd, pred && { id: pred.id, base: path.join(d, pred.id), pid: pred.pid }));
 			const log = fs.openSync(base + ".log", "a");
 			const env = { ...process.env, CUDA_VISIBLE_DEVICES: gpus.length ? gpus.join(",") : "" };
 			const child = spawn("bash", [base + ".sh"], { cwd, detached: true, stdio: ["ignore", log, log], env });
@@ -358,8 +466,20 @@ export default function (pi: ExtensionAPI) {
 			const j = id ? readJobs(root).find((x) => x.id === id) : undefined;
 			if (cmd === "log" && j) return ctx.ui.notify(tail(j.log, 30), "info");
 			if (cmd === "kill" && j?.pid) {
-				if (await ctx.ui.confirm("Kill job?", `${j.id} ${j.name}`)) { try { process.kill(-j.pid, "SIGTERM"); } catch { /* gone */ } }
-				return;
+				// A finished job's pid may have been reused; never signal it.
+				if (j.status !== "running" && j.status !== "queued") return ctx.ui.notify(`${j.id} is already ${j.status}.`, "info");
+				if (!(await ctx.ui.confirm("Kill job?", `${j.id} ${j.name}`))) return;
+				// Re-check after the dialog: the job may have finished meanwhile and its pid been reused.
+				refresh(root);
+				const cur = readJobs(root).find((x) => x.id === j.id);
+				if (!cur?.pid || (cur.status !== "running" && cur.status !== "queued") || !wrapperAlive(cur))
+					return ctx.ui.notify(`${j.id} is ${cur?.status ?? "gone"}; nothing to kill.`, "info");
+				try { process.kill(-cur.pid, "SIGTERM"); } catch { /* gone */ }
+				// Record it now: a killed wrapper leaves no exit code; refresh marks it lost and writes the sentinel that releases dependents.
+				await new Promise((r) => setTimeout(r, 1500)); refresh(root);
+				const k = readJobs(root).find((x) => x.id === j.id);
+				const deps = readJobs(root).filter((x) => x.after === j.id && x.status === "queued").length;
+				return ctx.ui.notify(`${j.id}: ${k?.status ?? "unknown"}${deps ? `; ${deps} queued dependent(s) will stop without running` : ""}`, "info");
 			}
 			ctx.ui.notify(readJobs(root).slice(-20).map(line).join("\n") || "(no jobs)", "info");
 		},

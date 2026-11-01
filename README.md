@@ -94,6 +94,7 @@ instructions belong on that machine, not in shared configuration.
 | `extensions/literature-reviewer/` | `literature_review` delegation tool (Approach B: hybrid subagent integration & FleetView) |
 | [`extensions/multi-codex/`](extensions/multi-codex/README.md) | Native Codex OAuth slots, account status in footer and quota-aware virtual routing: `/codex-add`, `/codex-status`, `/codex-switch`, `/codex-auto-status` |
 | `extensions/usage-limits.ts` | `/usage`, response-header limits and active Codex usage; display only, native compaction |
+| `extensions/cc-patch-compat.ts` | Links `@earendil-works/coding-agent` to `pi-coding-agent` in the running Pi install, so documentation paths renamed by pi-cc-patch resolve |
 | `roles/literature-reviewer/` | Role skills (`research-ideas`) used by that extension |
 | `optional/mineru/` | Installer + pinned lockfile for the optional MinerU equation backend |
 | `bin/common.sh` | Cross-platform helpers: agent home, OS, python, venv layout, symlink test |
@@ -177,9 +178,12 @@ sessions may retain the old controller/model until then.
 Shared `config/settings.json` declares these packages: `pi-subagents`
 (delegation, async runs), `pi-antigravity` (Gemini provider, search, images),
 `@juicesharp/rpiv-ask-user-question` (interactive decisions),
-`git:github.com/picassio/pi-cc-patch`, and the local `packages/research-runtime`
-(context management) and `packages/lab` (`job_start`/`job_list`: detached jobs
-with GPU assignment from the nearest project `.pi/lab.json`).
+`git:github.com/picassio/pi-cc-patch` (Anthropic subscription billing; it renames
+`pi-coding-agent` in the prompt, hence `extensions/cc-patch-compat.ts`), and the
+local `packages/research-runtime` (context management) and `packages/lab`
+(`job_start`/`job_list`: detached jobs with GPU assignment from the nearest project
+`.pi/lab.json`; a finished job wakes only the session that started it or one bound
+to its card, and killing a job releases the jobs queued behind it).
 `pi update --extensions` refreshes the npm/git packages to their latest releases.
 
 Research work runs through project spec cards: `agents/verifier.md` (Astra,
