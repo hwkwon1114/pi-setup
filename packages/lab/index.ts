@@ -28,6 +28,12 @@
  *   and `.pi/lab.json` with a GPU policy from nvidia-smi. Never overwrites an existing file.
  *
  * Registry: <dir of lab.json>/lab/jobs/<id>.{json,sh,log,exit}. No lab.json -> CPU-only jobs (gpus must be 0).
+ *
+ * Slurm backend (Quest): when `sbatch` is on PATH (or lab.json sets "backend": "slurm"), job_start submits with
+ *   sbatch and the scheduler is the source of truth (squeue while live, sacct after; see slurm.ts). Jobs survive Pi
+ *   restarts and login-node changes; the originating session is woken once on completion/failure. Defaults come from
+ *   lab.json `slurm` {account, partition, time, cpus, mem, conda_env, extra}, then built-in Quest defaults.
+ *   Local jobs record their host; a local PID is only declared lost when checked on that same host.
  */
 import { Type } from "@earendil-works/pi-ai";
 import { defineTool, type ExtensionAPI, type ExtensionContext } from "@earendil-works/pi-coding-agent";
@@ -36,6 +42,8 @@ import { createHash } from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
+import * as os from "node:os";
+import * as slurm from "./slurm.ts";
 
 interface Policy {
 	allowed_gpus: number[]; max_gpus_per_job: number; notes?: string;
@@ -44,16 +52,26 @@ interface Policy {
 	/** Optional: a GPU used only by other users' processes is usable when it has at least this much free memory (MiB);
 	 *  unset = any foreign compute process makes the GPU busy (previous behaviour). */
 	share_foreign_min_free_mib?: number;
+	backend?: "local" | "slurm"; slurm?: slurm.SlurmDefaults;
 }
 interface Job {
 	id: string; name: string; card?: string; cwd: string; command: string; gpus: number[]; after?: string; on_done?: string;
 	log: string; exitFile: string; pid?: number; session?: string; started: string; ended?: string;
 	status: "queued" | "running" | "done" | "failed" | "lost"; exit?: number; inputs?: Record<string, string>;
 	git?: { head?: string; dirty?: string[] }; notified?: boolean;
+	backend?: "local" | "slurm"; host?: string; slurm_id?: string; slurm_detail?: string; missing_since?: string;
 }
 const FINISHED = new Set<Job["status"]>(["done", "failed", "lost"]);
 /** Exit codes written by the lab itself: predecessor failed, predecessor vanished, wrapper lost. */
 export const EXIT = { depFailed: 97, depVanished: 98, lost: 99 } as const;
+
+const QUEST_DEFAULTS: slurm.SlurmDefaults = {
+	account: process.env.SRUN_ACCOUNT ?? "p33082", partition: "short", time: "00:30:00", cpus: 1, mem: "4G",
+};
+const hasSbatch = (() => { let v: boolean | undefined; return () => {
+	if (v === undefined) { try { execFileSync("which", ["sbatch"], { stdio: "ignore", timeout: 5000 }); v = true; } catch { v = false; } }
+	return v;
+}; })();
 
 function findPolicy(cwd: string): { policy?: Policy; root: string } {
 	for (let d = path.resolve(cwd); ; d = path.dirname(d)) {
@@ -114,10 +132,36 @@ function gpuFreeMiB(): Map<number, number> {
 	return new Map(out.trim().split("\n").filter(Boolean).map((l) => { const [i, f] = l.split(",").map((x) => Number(x.trim())); return [i, f] as [number, number]; }));
 }
 
-/** Refresh job states from exit files / wrapper processes. Returns jobs that newly finished (as observed by this process). */
-export function refresh(root: string): Job[] {
+let lastSlurmQuery = 0;
+/** Refresh job states from exit files / wrapper processes (local) or the scheduler (slurm). Returns jobs that newly finished. */
+export function refresh(root: string, force = true): Job[] {
 	const fin: Job[] = [];
-	for (const j of readJobs(root)) {
+	const jobs = readJobs(root);
+	const sj = jobs.filter((j) => (j.status === "running" || j.status === "queued") && j.backend === "slurm" && j.slurm_id);
+	if (sj.length && (force || Date.now() - lastSlurmQuery > 60000)) {
+		lastSlurmQuery = Date.now();
+		let res: Map<string, slurm.SlurmStatus | undefined> | undefined;
+		try { res = slurm.query(sj.map((j) => j.slurm_id!)); } catch { res = undefined; } // scheduler unreachable: leave state
+		for (const j of res ? sj : []) {
+			const s = res!.get(j.slurm_id!);
+			if (!s) {
+				if (!j.missing_since) { j.missing_since = new Date().toISOString(); writeJob(root, j); }
+				else if (Date.now() - Date.parse(j.missing_since) > slurm.MISSING_GRACE_MS) {
+					j.status = "lost"; j.ended = new Date().toISOString(); j.slurm_detail = "absent from squeue and sacct";
+					writeJob(root, j); fin.push(j);
+				}
+				continue;
+			}
+			const changed = s.state !== j.status || s.detail !== j.slurm_detail || j.missing_since;
+			j.missing_since = undefined; j.slurm_detail = s.detail;
+			if (s.state === "done" || s.state === "failed") {
+				j.status = s.state; j.exit = s.exit; j.ended = s.ended ?? new Date().toISOString();
+				writeJob(root, j); fin.push(j);
+			} else if (changed) { j.status = s.state as Job["status"]; writeJob(root, j); }
+		}
+	}
+	for (const j of jobs) {
+		if (j.backend === "slurm") continue;
 		if (j.status === "lost") {
 			// Recorded lost without a sentinel (by an older lab version): backfill it so `after` dependents stop waiting.
 			if (!fs.existsSync(j.exitFile) && !wrapperAlive(j)) markLost(j);
@@ -125,7 +169,8 @@ export function refresh(root: string): Job[] {
 		}
 		if (j.status !== "running" && j.status !== "queued") continue;
 		// Wrapper gone and still no exit file after the liveness check: it can no longer write one, so the job is lost.
-		if (!fs.existsSync(j.exitFile) && !wrapperAlive(j) && !fs.existsSync(j.exitFile)) markLost(j);
+		// Local jobs record their host; a local PID is only declared lost when checked on that same host.
+		if ((!j.host || j.host === os.hostname()) && !fs.existsSync(j.exitFile) && !wrapperAlive(j) && !fs.existsSync(j.exitFile)) markLost(j);
 		if (fs.existsSync(j.exitFile)) {
 			const raw = fs.readFileSync(j.exitFile, "utf8").trim();
 			if (!/^-?\d+$/.test(raw)) continue; // still being written (old wrappers write `echo 97 > exit`): next poll
@@ -302,7 +347,7 @@ function cardHeader(file: string): string {
  */
 export function summarizeActive(act: Job[]): string {
 	if (!act.length) return "(none)";
-	const g = (j: Job) => (j.gpus.length ? `gpu ${j.gpus.join(",")}` : "cpu");
+	const g = (j: Job) => (j.backend === "slurm" ? `slurm ${j.slurm_id}` : j.gpus.length ? `gpu ${j.gpus.join(",")}` : "cpu");
 	const run = act.filter((j) => j.status === "running")
 		.map((j) => `${j.id}  running  ${g(j)}  ${j.card ?? "-"}  ${j.name}  started ${j.started.slice(0, 16)}Z`);
 	const queued = act.filter((j) => j.status === "queued");
@@ -345,7 +390,7 @@ export function stateSections(cwd: string, activeCard?: string): { lab_state: st
 }
 
 function line(j: Job) {
-	const g = j.gpus.length ? `gpu ${j.gpus.join(",")}` : "cpu";
+	const g = j.backend === "slurm" ? `slurm ${j.slurm_id}` : j.gpus.length ? `gpu ${j.gpus.join(",")}` : "cpu";
 	const e = j.exit !== undefined ? ` exit=${j.exit}` : "";
 	return `${j.id}  ${j.status.padEnd(7)} ${dur(j.started, j.ended).padStart(7)}  ${g.padEnd(9)} ${j.card ?? "-"}  ${j.name}${e}`;
 }
@@ -358,6 +403,7 @@ export default function (pi: ExtensionAPI) {
 	const report = (j: Job) =>
 		`[lab] Job ${j.id} "${j.name}"${j.card ? ` (card ${j.card})` : ""} ${j.status.toUpperCase()}` +
 		`${j.exit !== undefined ? ` exit=${j.exit}` : ""} after ${dur(j.started, j.ended)}. Log: ${j.log}\n` +
+		(j.backend === "slurm" ? `Slurm ${j.slurm_id}: ${j.slurm_detail ?? ""}\n` : "") +
 		"```\n" + tail(j.log) + "\n```\n" +
 		(j.on_done ? `Planned next step (from job_start on_done): ${j.on_done}\n` : "");
 	const verify = "Verify outputs before reporting; a zero exit code is not evidence the results are correct.";
@@ -372,7 +418,7 @@ export default function (pi: ExtensionAPI) {
 	const poll = (ctx: ExtensionContext, startup = false) => {
 		try {
 			const { root } = findPolicy(ctx.cwd);
-			const fin = refresh(root);
+			const fin = refresh(root, false);
 			const jobs = readJobs(root);
 			const own = jobs.filter((j) => FINISHED.has(j.status) && !j.notified && mine(j) && claimReport(root, j, sessionId));
 			if (own.length) {
@@ -451,7 +497,7 @@ export default function (pi: ExtensionAPI) {
 		const m = [...cmd.matchAll(/CUDA_VISIBLE_DEVICES\s*=\s*["']?([0-9,\s]*)/g)];
 		if (!m.length) return;
 		const { policy } = findPolicy(ctx.cwd);
-		if (!policy) return;
+		if (!policy?.allowed_gpus) return;
 		for (const x of m) {
 			const ids = x[1].split(",").map((s) => s.trim()).filter(Boolean).map(Number);
 			const bad = ids.filter((g) => !policy.allowed_gpus.includes(g));
@@ -463,30 +509,90 @@ export default function (pi: ExtensionAPI) {
 		name: "job_start",
 		label: "Start job",
 		description:
-			"Launch a long-running command (training, sweeps, simulations) as a detached, tracked job. Prefer this over nohup/& in bash. " +
-			"GPUs are assigned under the project lab policy (one job per GPU; CUDA_VISIBLE_DEVICES is set for you — do not set it in the command). " +
+			"Launch a long-running command (training, sweeps, simulations) as a detached, tracked job. Prefer this over nohup/& or raw sbatch in bash. " +
+			"On Slurm clusters (sbatch on PATH, e.g. Quest) the default backend submits with sbatch; the scheduler (squeue/sacct) is the source of truth, so jobs survive Pi restarts. " +
+			"Give `command` (wrapped in a generated batch script; resources from `slurm`, lab.json `slurm` defaults, else Quest defaults short/00:30:00/1 cpu/4G) " +
+			"or `script` (an existing sbatch script whose #SBATCH lines apply; `slurm` fields given here override them). " +
+			"Local backend: GPUs are assigned under the project lab policy (CUDA_VISIBLE_DEVICES is set for you — do not set it in the command). " +
 			"Records sha256 of `inputs` (code/config files) and git state. When the job exits, this session is woken with exit code, log tail and `on_done`. " +
-			"Use `after` to queue behind another job (runs only if that job exits 0).",
+			"Use `after` to queue behind another job of the same backend (runs only if that job exits 0).",
 		parameters: Type.Object({
 			name: Type.String({ description: "Short job name" }),
-			command: Type.String({ description: "Shell command (bash). Write outputs to the declared output directory." }),
+			command: Type.Optional(Type.String({ description: "Shell command (bash). Write outputs to the declared output directory. Required unless `script` is given." })),
+			script: Type.Optional(Type.String({ description: "Slurm only: path to an existing sbatch script to submit instead of `command`" })),
+			script_args: Type.Optional(Type.Array(Type.String(), { description: "Arguments passed to `script`" })),
+			backend: Type.Optional(Type.Union([Type.Literal("slurm"), Type.Literal("local")], { description: "Default: lab.json backend, else slurm if sbatch exists, else local" })),
+			slurm: Type.Optional(Type.Object({
+				account: Type.Optional(Type.String()), partition: Type.Optional(Type.String()),
+				time: Type.Optional(Type.String({ description: "Walltime, e.g. 04:00:00" })), cpus: Type.Optional(Type.Number()),
+				mem: Type.Optional(Type.String({ description: "e.g. 16G" })), array: Type.Optional(Type.String({ description: "--array spec, e.g. 0-9%4" })),
+				conda_env: Type.Optional(Type.String({ description: "Conda env activated before `command`" })),
+				extra: Type.Optional(Type.Array(Type.String(), { description: "Extra sbatch options" })),
+			}, { description: "Slurm resources; fields override lab.json slurm defaults" })),
 			cwd: Type.Optional(Type.String({ description: "Working directory (default: session cwd)" })),
 			gpus: Type.Optional(Type.Number({ description: "Number of GPUs (default 0 = CPU)" })),
 			card: Type.Optional(Type.String({ description: "Card ID this job belongs to, e.g. SD-P2" })),
-			inputs: Type.Optional(Type.Array(Type.String(), { description: "Code/config files to hash for provenance" })),
 			after: Type.Optional(Type.String({ description: "Job id to wait for (must exit 0)" })),
+			inputs: Type.Optional(Type.Array(Type.String(), { description: "Code/config files to hash for provenance" })),
 			on_done: Type.Optional(Type.String({ description: "What the orchestrator should do when this job finishes" })),
 		}),
 		async execute(_id, p, _signal, _onUpdate, ctx) {
 			const cwd = path.resolve(ctx.cwd, p.cwd ?? ".");
 			const { policy, root } = findPolicy(cwd);
 			const n = p.gpus ?? 0; let gpus: number[] = [];
+			const backend = p.backend ?? policy?.backend ?? (hasSbatch() ? "slurm" : "local");
+			if (!p.command === !p.script) throw new Error("Give exactly one of `command` or `script`.");
+			if (p.script && backend !== "slurm") throw new Error("`script` requires the slurm backend.");
 			refresh(root);
 			const jobs = readJobs(root);
 			const pred = p.after ? jobs.find((j) => j.id === p.after) : undefined;
 			if (p.after && !pred) throw new Error(`after: unknown job ${p.after}`);
 			if (pred && (pred.status === "failed" || pred.status === "lost")) throw new Error(`after: job ${pred.id} is already ${pred.status}; it cannot exit 0`);
-			if (/(export\s+)?CUDA_VISIBLE_DEVICES\s*=/.test(p.command)) throw new Error("Do not set CUDA_VISIBLE_DEVICES in the command; request gpus instead.");
+			if (pred && (pred.backend ?? "local") !== backend) throw new Error(`after: job ${p.after} uses the ${pred.backend ?? "local"} backend; dependencies must use the same backend.`);
+			const id = `${new Date().toISOString().slice(5, 16).replace(/[-:T]/g, "")}-${Math.random().toString(36).slice(2, 6)}`;
+			const d = jobsDir(root), base = path.join(d, id);
+			const inputs: Record<string, string> = {};
+			for (const f of p.inputs ?? []) { const a = path.resolve(cwd, f); inputs[f] = fs.existsSync(a) ? sha(a) : "MISSING"; }
+			let git: Job["git"];
+			try {
+				git = { head: execFileSync("git", ["rev-parse", "HEAD"], { cwd, encoding: "utf8" }).trim(),
+					dirty: execFileSync("git", ["status", "--porcelain"], { cwd, encoding: "utf8" }).split("\n").filter(Boolean).slice(0, 200) };
+			} catch { git = undefined; }
+
+			if (backend === "slurm") {
+				// Script mode keeps the script's own #SBATCH lines; only explicit `slurm` fields override them.
+				const req: slurm.SlurmRequest = p.script ? { ...(p.slurm ?? {}) } : { ...QUEST_DEFAULTS, ...(policy?.slurm ?? {}), ...(p.slurm ?? {}) };
+				if (n > 0) req.gpus = n;
+				if (pred) {
+					if (pred.status === "failed" || pred.status === "lost") throw new Error(`after: job ${pred.id} already ${pred.status}.`);
+					if (pred.status !== "done") req.dependency = `afterok:${pred.slurm_id}`;
+				}
+				let script: string, log: string | undefined;
+				if (p.command) {
+					script = base + ".cmd.sh";
+					fs.writeFileSync(script, slurm.wrapCommand(p.command, req.conda_env));
+					log = req.array ? `${base}_%a.log` : `${base}.log`;
+				} else {
+					script = path.resolve(cwd, p.script!);
+					if (!fs.existsSync(script)) throw new Error(`script not found: ${script}`);
+					inputs[p.script!] = sha(script);
+				}
+				const args = slurm.sbatchArgs(req, p.name, cwd, log);
+				const sid = slurm.submit(args, script, cwd, p.script_args ?? []);
+				log ??= slurm.stdoutPath(sid) ?? "(see the script's #SBATCH --output)";
+				const job: Job = { id, name: p.name, card: p.card, cwd, gpus: [], after: p.after, on_done: p.on_done,
+					command: p.command ?? ["sbatch", ...args, script, ...(p.script_args ?? [])].join(" "),
+					log, exitFile: base + ".exit", session: sessionId, started: new Date().toISOString(),
+					status: "queued", inputs, git, backend: "slurm", slurm_id: sid, host: os.hostname() };
+				writeJob(root, job);
+				return {
+					content: [{ type: "text", text: `Submitted job ${id} as Slurm ${sid} (${["sbatch", ...args].join(" ")}).\nLog: ${log}\nYou will be woken when it finishes; do not poll.` }],
+					details: job,
+				};
+			}
+
+			const command = p.command!;
+			if (/(export\s+)?CUDA_VISIBLE_DEVICES\s*=/.test(command)) throw new Error("Do not set CUDA_VISIBLE_DEVICES in the command; request gpus instead.");
 			if (n > 0) {
 				if (!policy) throw new Error("No .pi/lab.json GPU policy found above cwd; GPU jobs refused.");
 				if (n > policy.max_gpus_per_job) throw new Error(`Requested ${n} GPUs > max_gpus_per_job ${policy.max_gpus_per_job}`);
@@ -497,24 +603,15 @@ export default function (pi: ExtensionAPI) {
 				if (free.length < n) throw new Error(`Not enough free GPUs: need ${n}, free ${free.join(",") || "none"} (reserved by lab jobs: ${reserved.join(",") || "none"}; GPUs with compute processes: ${[...busy].join(",") || "none"}).`);
 				gpus = free.slice(0, n);
 			}
-			const id = `${new Date().toISOString().slice(5, 16).replace(/[-:T]/g, "")}-${Math.random().toString(36).slice(2, 6)}`;
-			const d = jobsDir(root), base = path.join(d, id);
-			const inputs: Record<string, string> = {};
-			for (const f of p.inputs ?? []) { const a = path.resolve(cwd, f); inputs[f] = fs.existsSync(a) ? sha(a) : "MISSING"; }
-			let git: Job["git"];
-			try {
-				git = { head: execFileSync("git", ["rev-parse", "HEAD"], { cwd, encoding: "utf8" }).trim(),
-					dirty: execFileSync("git", ["status", "--porcelain"], { cwd, encoding: "utf8" }).split("\n").filter(Boolean).slice(0, 200) };
-			} catch { git = undefined; }
-			fs.writeFileSync(base + ".cmd.sh", `#!/bin/bash\n${p.command}\n`);
+			fs.writeFileSync(base + ".cmd.sh", `#!/bin/bash\n${command}\n`);
 			fs.writeFileSync(base + ".sh", wrapperScript(base, cwd, pred && { id: pred.id, base: path.join(d, pred.id), pid: pred.pid }));
 			const log = fs.openSync(base + ".log", "a");
 			const env = { ...process.env, CUDA_VISIBLE_DEVICES: gpus.length ? gpus.join(",") : "" };
 			const child = spawn("bash", [base + ".sh"], { cwd, detached: true, stdio: ["ignore", log, log], env });
 			child.unref(); fs.closeSync(log);
-			const job: Job = { id, name: p.name, card: p.card, cwd, command: p.command, gpus, after: p.after, on_done: p.on_done,
+			const job: Job = { id, name: p.name, card: p.card, cwd, command, gpus, after: p.after, on_done: p.on_done,
 				log: base + ".log", exitFile: base + ".exit", pid: child.pid, session: sessionId, started: new Date().toISOString(),
-				status: p.after ? "queued" : "running", inputs, git };
+				status: p.after ? "queued" : "running", inputs, git, backend: "local", host: os.hostname() };
 			writeJob(root, job);
 			return {
 				content: [{ type: "text", text: `Started job ${id} (${job.status}) pid ${child.pid}, ${gpus.length ? `CUDA_VISIBLE_DEVICES=${gpus.join(",")}` : "CPU only"}.\nLog: ${job.log}\nYou will be woken when it exits; do not poll.` }],
@@ -526,12 +623,12 @@ export default function (pi: ExtensionAPI) {
 	pi.registerTool(defineTool({
 		name: "job_list",
 		label: "List jobs",
-		description: "List lab jobs (status, runtime, GPUs, card). Use instead of ps/nvidia-smi polling.",
+		description: "List lab jobs (status, runtime, GPUs or Slurm id, card). Use instead of ps/nvidia-smi/squeue polling.",
 		parameters: Type.Object({ all: Type.Optional(Type.Boolean({ description: "Include finished jobs (default: last 20)" })) }),
 		async execute(_id, p, _s, _u, ctx) {
 			const { root, policy } = findPolicy(ctx.cwd); refresh(root);
 			const jobs = readJobs(root); const shown = p.all ? jobs : jobs.slice(-20);
-			const txt = (policy ? `policy: GPUs ${policy.allowed_gpus.join(",")}, ≤${policy.max_gpus_per_job}/job\n` : "no GPU policy\n") +
+			const txt = (policy?.allowed_gpus ? `policy: GPUs ${policy.allowed_gpus.join(",")}, ≤${policy.max_gpus_per_job}/job\n` : "no GPU policy\n") +
 				(shown.map(line).join("\n") || "(no jobs)");
 			return { content: [{ type: "text", text: txt }], details: undefined };
 		},
@@ -557,6 +654,12 @@ export default function (pi: ExtensionAPI) {
 			const [cmd, id] = (args ?? "").trim().split(/\s+/);
 			const j = id ? readJobs(root).find((x) => x.id === id) : undefined;
 			if (cmd === "log" && j) return ctx.ui.notify(tail(j.log, 30), "info");
+			if (cmd === "kill" && j?.backend === "slurm" && j.slurm_id) {
+				if (await ctx.ui.confirm("Cancel Slurm job?", `${j.id} ${j.name} (slurm ${j.slurm_id})`)) {
+					try { slurm.cancel(j.slurm_id); } catch (e) { ctx.ui.notify(`scancel failed: ${(e as Error).message}`, "warning"); }
+				}
+				return;
+			}
 			if (cmd === "kill" && j?.pid) {
 				// A finished job's pid may have been reused; never signal it.
 				if (j.status !== "running" && j.status !== "queued") return ctx.ui.notify(`${j.id} is already ${j.status}.`, "info");
