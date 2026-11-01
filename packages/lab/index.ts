@@ -41,11 +41,26 @@ function findPolicy(cwd: string): { policy?: Policy; root: string } {
 	}
 }
 const jobsDir = (root: string) => { const d = path.join(root, "jobs"); fs.mkdirSync(d, { recursive: true }); return d; };
-function readJobs(root: string): Job[] {
+/** Parsed job files keyed by path; re-parsed only when the file's inode/mtime/size changes (writeJob renames). */
+const jobCache = new Map<string, { key: string; job: Job }>();
+export function readJobs(root: string): Job[] {
 	const d = jobsDir(root);
-	return fs.readdirSync(d).filter((f) => f.endsWith(".json")).map((f) => {
-		try { return JSON.parse(fs.readFileSync(path.join(d, f), "utf8")) as Job; } catch { return undefined; }
-	}).filter((j): j is Job => !!j).sort((a, b) => a.started.localeCompare(b.started));
+	const seen = new Set<string>();
+	const jobs: Job[] = [];
+	for (const f of fs.readdirSync(d)) {
+		if (!f.endsWith(".json")) continue;
+		const file = path.join(d, f);
+		seen.add(file);
+		try {
+			const st = fs.statSync(file);
+			const key = `${st.ino}:${st.mtimeMs}:${st.size}`;
+			let hit = jobCache.get(file);
+			if (!hit || hit.key !== key) { hit = { key, job: JSON.parse(fs.readFileSync(file, "utf8")) as Job }; jobCache.set(file, hit); }
+			jobs.push(structuredClone(hit.job)); // callers mutate jobs; keep the cache pristine
+		} catch { jobCache.delete(file); }
+	}
+	for (const file of jobCache.keys()) if (file.startsWith(d + path.sep) && !seen.has(file)) jobCache.delete(file);
+	return jobs.sort((a, b) => a.started.localeCompare(b.started));
 }
 function writeJob(root: string, j: Job) {
 	const f = path.join(jobsDir(root), `${j.id}.json`); fs.writeFileSync(f + ".tmp", JSON.stringify(j, null, 1)); fs.renameSync(f + ".tmp", f);
@@ -102,6 +117,24 @@ function cardHeader(file: string): string {
 	} catch { return "(card unreadable)"; }
 }
 
+/**
+ * Running jobs one per line; queued jobs as counts per card and GPU (a long queue would otherwise
+ * dominate the per-turn prompt). Stable text (no durations), so the section changes only when jobs do.
+ */
+export function summarizeActive(act: Job[]): string {
+	if (!act.length) return "(none)";
+	const g = (j: Job) => (j.gpus.length ? `gpu ${j.gpus.join(",")}` : "cpu");
+	const run = act.filter((j) => j.status === "running")
+		.map((j) => `${j.id}  running  ${g(j)}  ${j.card ?? "-"}  ${j.name}  started ${j.started.slice(0, 16)}Z`);
+	const queued = act.filter((j) => j.status === "queued");
+	if (queued.length) {
+		const groups = new Map<string, number>();
+		for (const j of queued) { const k = `${j.card ?? "-"} on ${g(j)}`; groups.set(k, (groups.get(k) ?? 0) + 1); }
+		run.push(`${queued.length} queued: ${[...groups].map(([k, n]) => `${n}× ${k}`).join(", ")} (job_list for ids)`);
+	}
+	return run.join("\n");
+}
+
 function line(j: Job) {
 	const g = j.gpus.length ? `gpu ${j.gpus.join(",")}` : "cpu";
 	const e = j.exit !== undefined ? ` exit=${j.exit}` : "";
@@ -128,7 +161,7 @@ export default function (pi: ExtensionAPI) {
 			const { root } = findPolicy(cwd);
 			const act = readJobs(root).filter((j) => j.status === "running" || j.status === "queued");
 			// Stable text (no durations): the section is re-sent as a transcript delta only when it changes.
-			jobs = act.length ? act.map((j) => `${j.id}  ${j.status}  ${j.gpus.length ? `gpu ${j.gpus.join(",")}` : "cpu"}  ${j.card ?? "-"}  ${j.name}  started ${j.started.slice(0, 16)}Z`).join("\n") : "(none)";
+			jobs = summarizeActive(act);
 		} catch { jobs = "(registry unreadable)"; }
 		return [
 			"Re-read from files before this turn. Files are authoritative over conversation memory and compressed summaries.",

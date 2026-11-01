@@ -30,7 +30,8 @@ const registry = { find: (provider, id) => model(provider, id),
  test('selection chooses maximum conservative remaining; reserve/ties/unknown are deterministic', () => {
   assert.equal(chooseAccount([{provider:CODEX_SLOTS[0],remaining:10},{provider:CODEX_SLOTS[1],remaining:80}]).provider,CODEX_SLOTS[1]);
   assert.equal(chooseAccount([{provider:CODEX_SLOTS[2],remaining:60},{provider:CODEX_SLOTS[0],remaining:60}]).provider,CODEX_SLOTS[0]);
-  assert.equal(chooseAccount([{provider:CODEX_SLOTS[0],remaining:5},{provider:CODEX_SLOTS[1],remaining:null},{provider:'openai',remaining:100}]),undefined);
+  assert.equal(chooseAccount([{provider:CODEX_SLOTS[0],remaining:0},{provider:CODEX_SLOTS[1],remaining:null},{provider:'openai',remaining:100}]),undefined);
+  assert.equal(chooseAccount([{provider:CODEX_SLOTS[0],remaining:5},{provider:CODEX_SLOTS[1],remaining:null}]).provider,CODEX_SLOTS[0]);
  });
  test('quota service queries only separate OAuth Codex accounts; cache expires and force refresh works', async () => {
   let clock=now; const calls=[];

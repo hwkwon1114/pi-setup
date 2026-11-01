@@ -1,15 +1,26 @@
 // Bounded offline fixture: 12 synthetic messages + one call/result, no model calls or delegates.
 // Run: node packages/research-runtime/test-context.mjs
 import assert from 'node:assert/strict';
-import { mkdtempSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdtempSync, existsSync, readdirSync } from 'node:fs';
+import { tmpdir, homedir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { createRequire } from 'node:module';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 
-const globalRoot = execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim();
-const host = join(globalRoot, '@earendil-works/pi-coding-agent');
+// Pi host modules: PI_HOST_MODULES, else the newest managed install, else the global npm install.
+function piModules() {
+  if (process.env.PI_HOST_MODULES) return process.env.PI_HOST_MODULES;
+  const home = process.env.PI_CODING_AGENT_DIR ?? join(homedir(), '.pi', 'agent');
+  const rel = join(home, 'install', 'releases');
+  const versions = existsSync(rel) ? readdirSync(rel).filter(v => existsSync(join(rel, v, 'node_modules', '@earendil-works', 'pi-coding-agent')))
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true })) : [];
+  if (versions.length) return join(rel, versions.at(-1), 'node_modules');
+  return execFileSync('npm', ['root', '-g'], { encoding: 'utf8', shell: process.platform === 'win32' }).trim();
+}
+const modules = piModules();
+const host = join(modules, '@earendil-works/pi-coding-agent');
+const hostDep = name => [join(host, 'node_modules', name), join(modules, name)].find(existsSync);
 const requireHost = createRequire(join(host, 'package.json'));
 const { createJiti } = requireHost('jiti');
 const root = mkdtempSync(join(tmpdir(), 'standalone-acp-fixture-'));
@@ -21,8 +32,8 @@ assert(!process.env.BILLION_CONTEXT_NATIVE && !process.env.BILLION_CONTEXT_PROXY
 const sdkPath = join(host, 'dist/index.js');
 const jiti = createJiti(import.meta.url, { alias: {
   '@earendil-works/pi-coding-agent': sdkPath,
-  '@earendil-works/pi-tui': join(host, 'node_modules/@earendil-works/pi-tui/dist/index.js'),
-  'typebox': join(host, 'node_modules/typebox/build/index.mjs'),
+  '@earendil-works/pi-tui': join(hostDep('@earendil-works/pi-tui'), 'dist/index.js'),
+  'typebox': join(hostDep('typebox'), 'build/index.mjs'),
 } });
 const { SessionManager } = await import(pathToFileURL(sdkPath).href);
 const activate = await jiti.import(join(dirname(fileURLToPath(import.meta.url)), 'context.ts'), { default: true });
@@ -84,5 +95,20 @@ assert(!JSON.stringify(folded.messages).includes('Fixture message 1: EXACT_SENTI
 const restored = await call('decompress', { blockId, inline: true, full: true });
 assert(restored.includes('EXACT_SENTINEL_0'), restored);
 assert(restored.includes('Consumed diagnostic.'), restored);
+// System prompt: ACP text must arrive as a section, not a forced prompt that drops later sections.
+const sp = await import(pathToFileURL(join(host, 'dist/core/system-prompt.js')).href);
+const options = sp.normalizeBuildSystemPromptOptions({ cwd: root, selectedTools: ['read'], contextFiles: [], skills: [] });
+let forced;
+const laterSection = event => { event.systemPromptOptions.sections.lab_state = 'LAB_SENTINEL'; };
+for (const fn of [...(handlers.get('before_agent_start') ?? []), laterSection]) {
+  const event = { type: 'before_agent_start', prompt: 'x', systemPromptOptions: options,
+    get systemPrompt() { return sp.buildSystemPrompt(options); } };
+  const r = await fn(event, ctx);
+  if (r?.systemPrompt !== undefined) forced = r.systemPrompt;
+}
+assert.equal(forced, undefined, 'ACP must not force the system prompt');
+const secs = sp.buildSystemPromptSections(options);
+assert(/ACP TAGS/.test(secs.acp_context ?? ''), 'ACP instructions present as acp_context section');
+assert((secs.lab_state ?? '').includes('LAB_SENTINEL'), 'later extension section survives');
 await emit('session_shutdown', {});
-console.log('PASS: standalone hooks, five context tools, delegates off, status, fold and exact retrieval; artifacts: ' + root);
+console.log('PASS: standalone hooks, ACP prompt as section (later sections kept), five context tools, delegates off, status, fold and exact retrieval; artifacts: ' + root);

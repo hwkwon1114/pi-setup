@@ -21,7 +21,7 @@ Before a new turn (including a new child's first prompt), the router polls
 `https://chatgpt.com/backend-api/wham/usage` using native resolved OAuth auth.
 It selects the account with the highest conservative remaining percentage:
 the minimum across primary, secondary and **all** additional reported limits.
-Ties prefer the lowest slot. An account needs **more than 5%** remaining.
+Ties prefer the lowest slot. An account needs **more than 0%** remaining.
 Identical ChatGPT account IDs in multiple slots count only once.
 
 Usage is cached for 60 seconds per extension instance. There is no idle polling;
@@ -31,7 +31,7 @@ jobs can choose the same account. This is best-effort selection, not a quota
 reservation, exact capacity estimate or guarantee of model-specific entitlement.
 Unknown/malformed usage, missing auth, stale reset windows and HTTP failures are
 ineligible. If no account is eligible, routing fails closed with a diagnostic.
-The 5% reserve and 60-second cache are constants in `router.mjs`.
+The 0% reserve and 60-second cache are constants in `router.mjs`.
 
 Tool continuations and retries remain pinned to their original account; the pin
 survives compaction through Pi's branch router state. A provider/quota failure is
