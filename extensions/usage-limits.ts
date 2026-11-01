@@ -19,9 +19,17 @@
  */
 
 import { readFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { join } from "node:path";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { getAgentDir } from "./multi-codex/stream.ts";
+
+// ─── Agent directory helper ──────────────────────────────────────────────────
+
+export function getAgentDir(): string {
+	const envDir = process.env.PI_CODING_AGENT_DIR;
+	if (envDir) return envDir;
+	return join(process.env.HOME || homedir(), ".pi", "agent");
+}
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -77,11 +85,28 @@ interface AccountUsage {
 
 const ANTHROPIC_PROVIDER = /^anthropic(?:-([2-9]|[1-9]\d+))?$/;
 const CODEX_PROVIDER = /^openai-codex(?:-([2-9]|[1-9]\d+))?$/;
-const CACHE_MS = 3 * 60 * 1000;
+export const CACHE_MS = 3 * 60 * 1000;
+export const ERROR_CACHE_MS = 15 * 1000;
 const FETCH_TIMEOUT_MS = 10_000;
 const ANTIGRAVITY_ENDPOINT = "https://cloudcode-pa.googleapis.com";
 const ANTIGRAVITY_UA =
 	"antigravity/cli/1.4.0 (aidev_client; os_type=linux; arch=amd64; cl=982146307; auth_method=consumer)";
+
+/** Determine if a cached usage entry must be refreshed for the given account ref. */
+export function isCacheStale(cached: AccountUsage | undefined, ref: AccountRef, now = Date.now()): boolean {
+	if (!cached) return true;
+	// Credentials changed on disk: cache is invalid immediately.
+	if (cached.ref.token !== ref.token || cached.ref.expires !== ref.expires || cached.ref.accountId !== ref.accountId) {
+		return true;
+	}
+	// Expired token now has a valid expiry: refresh immediately.
+	if (cached.error === "token expired" && (typeof ref.expires !== "number" || ref.expires > now)) {
+		return true;
+	}
+	// Transient errors retry sooner than successful responses.
+	const ttl = cached.error ? ERROR_CACHE_MS : CACHE_MS;
+	return now - cached.timestamp >= ttl;
+}
 
 function readJson(name: string): Record<string, any> {
 	try {
@@ -482,7 +507,7 @@ export default function (pi: ExtensionAPI) {
 		for (const ref of targets) {
 			let request = pending.get(ref.key);
 			const cached = usage.get(ref.key);
-			if (!request && (opts.force || !cached || Date.now() - cached.timestamp >= CACHE_MS)) {
+			if (!request && (opts.force || isCacheStale(cached, ref))) {
 				const req: Promise<void> = fetchAccountUsage(ref).then(result => {
 					if (started === generation) usage.set(ref.key, result);
 				});

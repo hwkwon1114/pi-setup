@@ -1,9 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtempSync, writeFileSync, rmSync} from 'node:fs';
-import {tmpdir} from 'node:os';
+import {mkdtempSync, writeFileSync, readFileSync, rmSync} from 'node:fs';
+import {tmpdir, homedir} from 'node:os';
 import {join} from 'node:path';
-import usageLimits, {parseAnthropicUsage, parseCodexUsage, parseAntigravityUsage, discoverAccounts, windowsForModel, fmtResetShort, fmtResetDate} from '../usage-limits.ts';
+import usageLimits, {
+  parseAnthropicUsage,
+  parseCodexUsage,
+  parseAntigravityUsage,
+  discoverAccounts,
+  windowsForModel,
+  fmtResetShort,
+  fmtResetDate,
+  getAgentDir,
+  isCacheStale,
+  CACHE_MS,
+  ERROR_CACHE_MS,
+} from '../usage-limits.ts';
 
 const originalAgentDir = process.env.PI_CODING_AGENT_DIR;
 const agentDir = mkdtempSync(join(tmpdir(), 'pi-usage-test-'));
@@ -191,4 +203,85 @@ test('shutdown suppresses late rendering', async t => {
   for (const r of resolve) r({ok:true,json:async()=>({remaining:99})});
   await start;
   assert.equal(h.statuses.get('usage-limits'),before);
+});
+
+test('getAgentDir is self-contained and independent of multi-codex', () => {
+  const source = readFileSync(new URL('../usage-limits.ts', import.meta.url), 'utf8');
+  assert.doesNotMatch(source, /from\s+["'].*multi-codex.*["']/);
+  assert.equal(getAgentDir(), agentDir);
+  const saved = process.env.PI_CODING_AGENT_DIR;
+  try {
+    delete process.env.PI_CODING_AGENT_DIR;
+    assert.equal(getAgentDir(), join(process.env.HOME || homedir(), '.pi', 'agent'));
+  } finally {
+    process.env.PI_CODING_AGENT_DIR = saved;
+  }
+});
+
+test('isCacheStale invalidates on changed credentials, cleared expiry, or error TTL', () => {
+  const ref = { key: 'openai-codex', vendor: 'codex', label: 'Codex', providers: ['openai-codex'],
+    token: 'tok1', expires: FUTURE, accountId: 'a1' };
+  const cached = { ref: { ...ref }, windows: [], raw: null, timestamp: 1000 };
+
+  // Fresh cache
+  assert.equal(isCacheStale(cached, ref, 1000 + 1000), false);
+  // Normal cache expiration
+  assert.equal(isCacheStale(cached, ref, 1000 + CACHE_MS), true);
+
+  // Credential changes invalidate immediately
+  assert.equal(isCacheStale(cached, { ...ref, token: 'tok2' }, 1000 + 10), true);
+  assert.equal(isCacheStale(cached, { ...ref, expires: FUTURE + 500 }, 1000 + 10), true);
+  assert.equal(isCacheStale(cached, { ...ref, accountId: 'a2' }, 1000 + 10), true);
+
+  // Token expired error invalidates immediately once expiry becomes future
+  const expiredCached = { ref: { ...ref, expires: 500 }, windows: [], error: 'token expired', raw: null, timestamp: 1000 };
+  assert.equal(isCacheStale(expiredCached, { ...ref, expires: 2000 }, 1500), true);
+
+  // Transient errors retry after ERROR_CACHE_MS rather than full CACHE_MS
+  const errorCached = { ref: { ...ref }, windows: [], error: 'HTTP 500', raw: null, timestamp: 1000 };
+  assert.equal(isCacheStale(errorCached, ref, 1000 + ERROR_CACHE_MS - 1), false);
+  assert.equal(isCacheStale(errorCached, ref, 1000 + ERROR_CACHE_MS), true);
+});
+
+test('refreshes immediately when Pi updates an expired token without waiting 3 minutes', async t => {
+  // Start with expired token
+  writeAuth({
+    'openai-codex': { type: 'oauth', access: 'fixture-expired', expires: Date.now() - 5000 },
+  });
+  const calls = mockFetch(t);
+  const h = harness('openai-codex');
+  await h.emit('session_start');
+  assert.equal(calls.length, 0, 'expired token makes no network fetch');
+  assert.match(h.statuses.get('usage-limits'), /Codex token expired$/);
+
+  // Pi refreshes token and updates auth.json (now + 1 hour)
+  writeAuth({
+    'openai-codex': { type: 'oauth', access: 'fixture-refreshed', expires: Date.now() + 3600_000 },
+  });
+
+  // Next event (e.g. turn_end background refresh after Pi generated with the new token)
+  h.emit('turn_end');
+  await new Promise(r => setTimeout(r, 10));
+  assert.equal(calls.length, 1, 'immediately fetches with refreshed credentials');
+  assert.equal(calls[0].options.headers.Authorization, 'Bearer fixture-refreshed');
+  assert.match(h.statuses.get('usage-limits'), /Codex 5h 75% 7d 4%$/);
+});
+
+test('credential changes on disk invalidate cache immediately without waiting CACHE_MS', async t => {
+  const calls = mockFetch(t);
+  const h = harness('openai-codex');
+  await h.emit('session_start');
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].options.headers.Authorization, 'Bearer fixture-primary');
+
+  // Same account, but auth.json updated with a new token
+  writeAuth({
+    'openai-codex': { type: 'oauth', access: 'fixture-primary-v2', accountId: 'acct-1', expires: FUTURE },
+  });
+
+  // Background refresh on turn_end immediately detects the new token
+  h.emit('turn_end');
+  await new Promise(r => setTimeout(r, 10));
+  assert.equal(calls.length, 2, 'second fetch triggered immediately');
+  assert.equal(calls[1].options.headers.Authorization, 'Bearer fixture-primary-v2');
 });
