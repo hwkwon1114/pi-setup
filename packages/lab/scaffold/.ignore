@@ -1,0 +1,3 @@
+# Search-ignore for retired work (see ACTIVE.md). Respected by rg/fd and agent search tools; does not affect Git.
+# Read these paths explicitly or use `rg --no-ignore` when a question needs them.
+**/archive/

@@ -184,6 +184,12 @@ local `packages/research-runtime` (context management) and `packages/lab`
 (`job_start`/`job_list`: detached jobs with GPU assignment from the nearest project
 `.pi/lab.json`; a finished job wakes only the session that started it or one bound
 to its card, and killing a job releases the jobs queued behind it).
+`/lab-init [dir]` creates a new research project's card-workflow files from
+`packages/lab/scaffold/` (dashboard, `DECISIONS.md` + `DECISIONS_LOG.md`, card
+template, verifier/critic prompts, anti-drift checklist, `.ignore`/`.gitignore`) and a
+`.pi/lab.json` GPU policy from `nvidia-smi` (all GPUs, one per job, all but one at
+once); it never overwrites existing files. Improve the workflow in the scaffold so
+every new project gets it; existing projects keep their own copies.
 These packages are pinned (exact npm versions, a pi-cc-patch commit) in
 `config/settings.json`, so `pi update --extensions` does not move them. To upgrade:
 read the package changelog, bump the pin, `./bin/sync-settings.sh`, restart Pi and

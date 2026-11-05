@@ -23,6 +23,9 @@
  * - `/card <ID>`: starts a fresh session bound to card <ID> (custom entry `lab-card`) and pre-fills a kickoff prompt;
  *   `/card <ID> here` binds the current session; `/card` lists cards. Jobs tagged with the active card wake that session
  *   even if another session started them.
+ * - `/lab-init [dir]`: creates the research-project scaffold (`scaffold/`: AGENTS.md, RESEARCH_STATE.md, DECISIONS.md +
+ *   DECISIONS_LOG.md, ACTIVE.md, cards/ template and verifier/critic prompts, anti-drift checklist, .ignore, .gitignore)
+ *   and `.pi/lab.json` with a GPU policy from nvidia-smi. Never overwrites an existing file.
  *
  * Registry: <dir of lab.json>/lab/jobs/<id>.{json,sh,log,exit}. No lab.json -> CPU-only jobs (gpus must be 0).
  */
@@ -32,6 +35,7 @@ import { spawn, execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 
 interface Policy {
 	allowed_gpus: number[]; max_gpus_per_job: number; notes?: string;
@@ -227,7 +231,56 @@ function findProject(cwd: string): string | undefined {
 }
 function listCards(proj: string): string[] {
 	const d = path.join(proj, "cards");
-	return fs.existsSync(d) ? fs.readdirSync(d).filter((f) => f.endsWith(".md") && f !== "TEMPLATE.md" && f !== "VERIFIER_PROMPT.md").sort() : [];
+	return fs.existsSync(d) ? fs.readdirSync(d).filter((f) => f.endsWith(".md") && f !== "TEMPLATE.md" && f !== "README.md" && !f.endsWith("_PROMPT.md")).sort() : [];
+}
+
+/** Scaffold shipped with this package (generic copies of the card-workflow project files). */
+export const SCAFFOLD_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "scaffold");
+
+/** Default GPU policy for a new project: every detected GPU, one per job, all but one at once when there are several. */
+export function defaultPolicy(gpuCount: number): Policy & { notes: string } {
+	const all = Array.from({ length: gpuCount }, (_, i) => i);
+	return {
+		allowed_gpus: all, max_gpus_per_job: 1,
+		...(gpuCount > 1 ? { max_total_gpus: gpuCount - 1 } : {}),
+		...(gpuCount ? { share_foreign_min_free_mib: 3000 } : {}),
+		notes: gpuCount
+			? `Initial /lab-init default: ${gpuCount} GPU(s) detected; one job per GPU${gpuCount > 1 ? `, at most ${gpuCount - 1} at once (leave one for other users)` : ""}; a GPU used by other users only with >=3000 MiB free. Review and record changes in DECISIONS_LOG.md.`
+			: "Initial /lab-init default: no GPUs detected; CPU-only jobs. Edit allowed_gpus to enable GPU jobs.",
+	};
+}
+
+/**
+ * Copy the project scaffold into `target`, filling {{PROJECT}}, {{ROOT}} and {{DATE}}, and write `.pi/lab.json`.
+ * Existing files are never overwritten (reported as skipped).
+ */
+export function scaffoldProject(target: string, opts: { project?: string; date?: string; gpuCount?: number; from?: string } = {}):
+	{ created: string[]; skipped: string[] } {
+	const root = path.resolve(target), from = opts.from ?? SCAFFOLD_DIR;
+	const vars: Record<string, string> = { PROJECT: opts.project ?? path.basename(root), ROOT: root, DATE: opts.date ?? new Date().toISOString().slice(0, 10) };
+	const fill = (t: string) => t.replace(/\{\{(PROJECT|ROOT|DATE)\}\}/g, (_, k: string) => vars[k]);
+	const created: string[] = [], skipped: string[] = [];
+	const put = (rel: string, text: string) => {
+		const dst = path.join(root, rel);
+		if (fs.existsSync(dst)) { skipped.push(rel); return; }
+		fs.mkdirSync(path.dirname(dst), { recursive: true });
+		fs.writeFileSync(dst, text, { flag: "wx" }); created.push(rel);
+	};
+	const walk = (rel: string) => {
+		for (const e of fs.readdirSync(path.join(from, rel), { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+			const r = path.join(rel, e.name);
+			if (e.isDirectory()) walk(r); else put(r, fill(fs.readFileSync(path.join(from, r), "utf8")));
+		}
+	};
+	walk("");
+	put(path.join(".pi", "lab.json"), JSON.stringify(defaultPolicy(opts.gpuCount ?? 0), null, 1) + "\n");
+	return { created, skipped };
+}
+
+function gpuCount(): number {
+	try {
+		return execFileSync("nvidia-smi", ["--query-gpu=index", "--format=csv,noheader"], { encoding: "utf8", timeout: 20000 }).trim().split("\n").filter(Boolean).length;
+	} catch { return 0; }
 }
 function findCard(proj: string, id: string): string | undefined {
 	const k = id.toLowerCase();
@@ -483,6 +536,19 @@ export default function (pi: ExtensionAPI) {
 			return { content: [{ type: "text", text: txt }], details: undefined };
 		},
 	}));
+
+	pi.registerCommand("lab-init", {
+		description: "`/lab-init [dir]`: create the research-project scaffold (cards, dashboard, decisions, prompts, .pi/lab.json); never overwrites",
+		handler: async (args, ctx) => {
+			const target = path.resolve(ctx.cwd, (args ?? "").trim() || ".");
+			const above = findProject(path.dirname(target));
+			if (above && !(await ctx.ui.confirm("Nested project?", `${above} already has RESEARCH_STATE.md. Create a separate project in ${target}?`))) return;
+			const { created, skipped } = scaffoldProject(target, { gpuCount: gpuCount() });
+			ctx.ui.notify(`lab-init in ${target}\nCreated (${created.length}): ${created.join(", ") || "none"}` +
+				(skipped.length ? `\nKept existing (${skipped.length}): ${skipped.join(", ")}` : "") +
+				"\nNext: write the objective in AGENTS.md, review .pi/lab.json, then draft the first card from cards/TEMPLATE.md.", "info");
+		},
+	});
 
 	pi.registerCommand("jobs", {
 		description: "Show lab jobs; `/jobs log <id>` shows a log tail; `/jobs kill <id>` stops a job",

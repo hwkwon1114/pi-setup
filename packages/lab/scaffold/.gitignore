@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+.ipynb_checkpoints/
+
+# Generated outputs stay in the project but outside Git.
+/outputs/
+# Lab job registry (logs, exit codes) next to .pi/lab.json.
+/.pi/lab/

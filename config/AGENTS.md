@@ -4,8 +4,9 @@ Project facts live in project `AGENTS.md`; methods in skills. Keep one authorita
 
 ## Research work: cards
 
-- A **card** (`cards/<ID>.md`, from the project template) is the unit of scientific work and approval: question, decision each outcome drives, formulas (F1…), known-answer checks, metrics/gates, data and information access, stopping rule, compute plan. The researcher approves the card; `DECISIONS.md` records decisions with date and rationale.
-- At session start/resume, read the project objective, the active card and `DECISIONS.md`. Summaries, queues and old approvals are not authorization.
+- A **card** (`cards/<ID>.md`, from the project template) is the unit of scientific work and approval: question, decision each outcome drives, formulas (F1…), known-answer checks, metrics/gates, data and information access, stopping rule, compute plan. The researcher approves the card. Decisions: full row with date and rationale in `DECISIONS_LOG.md`, one plain-language line per current rule in `DECISIONS.md`.
+- A new research project without these files: run `/lab-init` (creates the card template, verifier/critic prompts, dashboard, decision files and `.pi/lab.json`; never overwrites), then fill in the objective. Keep `RESEARCH_STATE.md` under 6000 characters (only that much is injected each turn).
+- At session start/resume, read the project objective, the active card and `DECISIONS.md` (full rows in `DECISIONS_LOG.md` when a rule matters). Summaries, queues and old approvals are not authorization.
 - Within an approved card, work end-to-end without procedural check-ins: implement → known-answer tests → **verifier** → run → analyse → report. Ask only for changes to the card's question, formulas, metrics/gates, data access or substantial compute, or for genuine blockers.
 - Do not substitute a proxy metric for the card's target; negative and non-identifiable results are valid outcomes. Never tune on final tests or relax a gate to pass.
 

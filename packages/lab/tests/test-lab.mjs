@@ -236,6 +236,38 @@ if (process.platform !== 'win32') {
   rmSync(proj, { recursive: true, force: true }); rmSync(bare, { recursive: true, force: true });
 }
 
+// /lab-init scaffold (2026-11-05): complete, placeholder-free, project-neutral, never overwrites, works with the state block.
+{
+  const np = join(mkdtempSync(join(tmpdir(), 'lab-init-')), 'new-proj');
+  const r1 = lab.scaffoldProject(np, { project: 'demo', date: '2026-01-02', gpuCount: 4 });
+  for (const f of ['AGENTS.md', 'RESEARCH_STATE.md', 'DECISIONS.md', 'DECISIONS_LOG.md', 'ACTIVE.md', '.ignore', '.gitignore',
+    'EXPERIMENT_ANTI_DRIFT_CHECKLIST.md', 'cards/TEMPLATE.md', 'cards/VERIFIER_PROMPT.md', 'cards/CRITIC_PROMPT.md',
+    'cards/verification/README.md', 'cards/critique/README.md', '.pi/lab.json'])
+    assert.ok(r1.created.includes(f) && existsSync(join(np, f)), `scaffold creates ${f}`);
+  assert.deepEqual(r1.skipped, []);
+  for (const f of r1.created) {
+    const t = readFileSync(join(np, f), 'utf8').replaceAll(np, '<root>');
+    assert.ok(!/\{\{[A-Z]+\}\}/.test(t), `${f}: placeholders filled`);
+    for (const bad of ['pxl1051', 'DED', 'KOH', 'θ', 'D69', 'Argon', 'SD-S']) assert.ok(!t.includes(bad), `${f}: project-neutral (${bad})`);
+  }
+  assert.ok(readFileSync(join(np, 'cards/VERIFIER_PROMPT.md'), 'utf8').includes(`\`${np}\``), 'root filled');
+  assert.ok(readFileSync(join(np, 'DECISIONS_LOG.md'), 'utf8').includes('| D01 | 2026-01-02 |'), 'date filled');
+  assert.ok(readFileSync(join(np, 'RESEARCH_STATE.md'), 'utf8').length < 6000, 'dashboard under the injection limit');
+  const pol = JSON.parse(readFileSync(join(np, '.pi/lab.json'), 'utf8'));
+  assert.deepEqual([pol.allowed_gpus, pol.max_gpus_per_job, pol.max_total_gpus, pol.share_foreign_min_free_mib], [[0, 1, 2, 3], 1, 3, 3000]);
+  assert.deepEqual(lab.defaultPolicy(0).allowed_gpus, [], 'no GPUs -> CPU only');
+  assert.equal(lab.defaultPolicy(1).max_total_gpus, undefined, 'single GPU usable');
+  writeFileSync(join(np, 'AGENTS.md'), 'MINE');
+  const r2 = lab.scaffoldProject(np, { gpuCount: 2 });
+  assert.deepEqual(r2.created, [], 'second run creates nothing'); assert.equal(r2.skipped.length, r1.created.length);
+  assert.equal(readFileSync(join(np, 'AGENTS.md'), 'utf8'), 'MINE', 'existing file kept');
+  const sec = lab.stateSections(np);
+  assert.ok(sec && sec.lab_state.includes('Current research state'), 'state block finds the new project');
+  // The packaged scaffold matches the files the test enumerates (catches a file added without a test).
+  const walk = (d, rel = '') => readdirSync(join(d, rel), { withFileTypes: true }).flatMap(e => e.isDirectory() ? walk(d, join(rel, e.name)) : [join(rel, e.name)]);
+  assert.equal(walk(lab.SCAFFOLD_DIR).length + 1, r1.created.length, 'scaffold files + lab.json');
+}
+
 // Optional read-only check against a real registry (LAB_REGISTRY=<dir containing jobs/>): cached read equals a naive parse.
 const real = process.env.LAB_REGISTRY;
 if (!real || !existsSync(join(real, 'jobs'))) { console.log('PASS (fixture only; set LAB_REGISTRY to also check a real registry)'); process.exit(0); }
