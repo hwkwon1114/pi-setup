@@ -8,16 +8,7 @@ import { createRequire } from 'node:module';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 
-// Pi host modules: PI_HOST_MODULES, else the newest managed install, else the global npm install.
-function piModules() {
-  if (process.env.PI_HOST_MODULES) return process.env.PI_HOST_MODULES;
-  const home = process.env.PI_CODING_AGENT_DIR ?? join(homedir(), '.pi', 'agent');
-  const rel = join(home, 'install', 'releases');
-  const versions = existsSync(rel) ? readdirSync(rel).filter(v => existsSync(join(rel, v, 'node_modules', '@earendil-works', 'pi-coding-agent')))
-    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true })) : [];
-  if (versions.length) return join(rel, versions.at(-1), 'node_modules');
-  return execFileSync('npm', ['root', '-g'], { encoding: 'utf8', shell: process.platform === 'win32' }).trim();
-}
+import { piModules } from '../../tests/lib/pi-host.mjs';
 const modules = piModules();
 const host = join(modules, '@earendil-works/pi-coding-agent');
 const hostDep = name => [join(host, 'node_modules', name), join(modules, name)].find(existsSync);
@@ -108,7 +99,8 @@ for (const fn of [...(handlers.get('before_agent_start') ?? []), laterSection]) 
 }
 assert.equal(forced, undefined, 'ACP must not force the system prompt');
 const secs = sp.buildSystemPromptSections(options);
-assert(/ACP TAGS/.test(secs.acp_context ?? ''), 'ACP instructions present as acp_context section');
+// Default and lean prompt packs (~/.pi/acp.json compress.promptPack) both describe the <acp> message refs.
+assert(/<acp>|<acp /.test(secs.acp_context ?? ''), 'ACP instructions present as acp_context section');
 assert((secs.lab_state ?? '').includes('LAB_SENTINEL'), 'later extension section survives');
 await emit('session_shutdown', {});
 console.log('PASS: standalone hooks, ACP prompt as section (later sections kept), five context tools, delegates off, status, fold and exact retrieval; artifacts: ' + root);

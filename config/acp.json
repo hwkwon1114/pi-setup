@@ -1,4 +1,4 @@
 {
-  "compress": { "nudgeGrowthTokens": 150000 },
+  "compress": { "nudgeGrowthTokens": 150000, "promptPack": "lean" },
   "preserveRecentTools": ["read"]
 }

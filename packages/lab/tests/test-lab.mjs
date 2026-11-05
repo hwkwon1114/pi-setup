@@ -6,21 +6,8 @@ import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { join, dirname } from 'node:path';
 import { createRequire } from 'node:module';
-function piModules() {
-  if (process.env.PI_HOST_MODULES) return process.env.PI_HOST_MODULES;
-  const home = process.env.PI_CODING_AGENT_DIR ?? join(homedir(), '.pi', 'agent');
-  const rel = join(home, 'install', 'releases');
-  const versions = existsSync(rel) ? readdirSync(rel).filter(v => existsSync(join(rel, v, 'node_modules', '@earendil-works', 'pi-coding-agent')))
-    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true })) : [];
-  if (versions.length) return join(rel, versions.at(-1), 'node_modules');
-  return execFileSync('npm', ['root', '-g'], { encoding: 'utf8', shell: process.platform === 'win32' }).trim();
-}
-const modules = piModules();
-const { createJiti } = createRequire(join(modules, '@earendil-works/pi-coding-agent/package.json'))('jiti');
-const jiti = createJiti(import.meta.url, { alias: {
-  '@earendil-works/pi-coding-agent': join(modules, '@earendil-works/pi-coding-agent/dist/index.js'),
-  '@earendil-works/pi-ai': join(modules, '@earendil-works/pi-ai/dist/index.js'),
-  'typebox': join(modules, 'typebox/build/index.mjs') } });
+import { hostJiti } from '../../../tests/lib/pi-host.mjs';
+const jiti = hostJiti(import.meta.url);
 const lab = await jiti.import(new URL('../index.ts', import.meta.url).pathname);
 
 const root = mkdtempSync(join(tmpdir(), 'lab-test-')); const d = join(root, 'jobs');
@@ -141,6 +128,15 @@ if (process.platform !== 'win32') {
   assert.deepEqual(lab.pickGpus([1, 2, 3], jobs, new Set([1, 2]), jobs[0]).free, [3], 'fan-out after A: not GPU 1 again');
   assert.deepEqual(lab.pickGpus([1, 2, 3], jobs, new Set([1, 2]), jobs[2]).free, [3], 'finished D hands over nothing (C uses GPU 2)');
   assert.deepEqual(lab.pickGpus([1, 2, 3], jobs, new Set([3])).free, [], 'all reserved or busy');
+  // max_total_gpus / share_foreign (2026-11-04): any 3 of 4 GPUs, foreign-only GPUs usable with enough free memory
+  const mk = (gpus, status = 'running') => ({ id: 'x' + gpus.join(''), gpus, status });
+  const free4 = new Map([[0, 10000], [1, 14000], [2, 14500], [3, 14500]]);
+  const sh = { shareForeign: true, minFreeMiB: 3000, freeMiB: free4 };
+  assert.deepEqual(lab.pickGpus([0, 1, 2, 3], [], new Set([0, 1, 2, 3]), undefined, { ...sh, maxTotal: 3 }).free.length, 3, 'cap 3 of 4 even if all foreign-busy');
+  assert.deepEqual(lab.pickGpus([0, 1, 2, 3], [mk([1]), mk([2]), mk([3])], new Set([0, 1, 2, 3]), undefined, { ...sh, maxTotal: 3 }).free, [], 'three held -> none free (never 4th)');
+  assert.deepEqual(lab.pickGpus([0, 1, 2, 3], [mk([1])], new Set([0, 1, 2]), undefined, { ...sh, maxTotal: 3 }).free, [3, 2], 'idle GPU first; room for two more; GPU 0 sorted last');
+  assert.deepEqual(lab.pickGpus([0, 1, 2, 3], [], new Set([0, 1, 2, 3]), undefined, { shareForeign: true, minFreeMiB: 20000, freeMiB: free4, maxTotal: 3 }).free, [], 'not enough free memory -> busy');
+  assert.deepEqual(lab.pickGpus([1, 2, 3], [], new Set([1])).free, [2, 3], 'old behaviour unchanged without opts');
 }
 
 // Extension behaviour with a fake Pi: report ownership across sessions, batching, startup display-only, busy follow-up,

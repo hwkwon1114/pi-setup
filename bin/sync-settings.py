@@ -15,7 +15,7 @@ from pathlib import Path
 import tempfile
 
 FILES = ('settings.json', 'models.json', 'mcp.json')
-MACHINE_KEYS = ('deviceId', 'lastChangelogVersion')
+MACHINE_KEYS = ('deviceId', 'lastChangelogVersion', 'extensionChangelogVersions')
 
 
 def load(path, default=None):

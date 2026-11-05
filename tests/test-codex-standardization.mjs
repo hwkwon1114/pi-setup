@@ -11,9 +11,10 @@ test('portable routing preserves configured providers and models',()=>{
  assert.equal(config.defaultProvider,'anthropic');
  assert.equal(config.defaultModel,'claude-opus-5-5');
  assert(!fs.existsSync(new URL('../extensions/multi-openai',import.meta.url)));
- assert(config.packages.includes('npm:pi-subagents@latest'));
- assert(config.packages.includes('npm:pi-antigravity@latest'));
- assert(config.packages.includes('npm:@juicesharp/rpiv-ask-user-question'));
+ // npm packages are pinned to exact versions (2026-11-05) so updates are deliberate
+ for (const name of ['pi-subagents','pi-antigravity','@juicesharp/rpiv-ask-user-question'])
+  assert(config.packages.some(p=>new RegExp(`^npm:${name.replace('/','\\/')}@\\d+\\.\\d+\\.\\d+$`).test(p)),`${name} pinned`);
+ assert(config.packages.some(p=>/^git:github\.com\/picassio\/pi-cc-patch@[0-9a-f]{40}$/.test(p)),'pi-cc-patch pinned to a commit');
  assert(config.packages.includes('./packages/lab'));
  assert(!config.packages.includes('npm:pi-goal-x'));
  assert(!config.packages.includes('npm:@dietrichgebert/ponytail'));

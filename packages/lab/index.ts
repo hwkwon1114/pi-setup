@@ -33,7 +33,14 @@ import { createHash } from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-interface Policy { allowed_gpus: number[]; max_gpus_per_job: number; notes?: string }
+interface Policy {
+	allowed_gpus: number[]; max_gpus_per_job: number; notes?: string;
+	/** Optional: cap on distinct GPUs held by active lab jobs at once (any of allowed_gpus). */
+	max_total_gpus?: number;
+	/** Optional: a GPU used only by other users' processes is usable when it has at least this much free memory (MiB);
+	 *  unset = any foreign compute process makes the GPU busy (previous behaviour). */
+	share_foreign_min_free_mib?: number;
+}
 interface Job {
 	id: string; name: string; card?: string; cwd: string; command: string; gpus: number[]; after?: string; on_done?: string;
 	log: string; exitFile: string; pid?: number; session?: string; started: string; ended?: string;
@@ -95,6 +102,12 @@ function gpuBusy(): Set<number> {
 	const q = (a: string) => execFileSync("nvidia-smi", [a, "--format=csv,noheader"], { encoding: "utf8", timeout: 20000 }).trim().split("\n").filter(Boolean).map((l) => l.split(",").map((x) => x.trim()));
 	const idx = new Map(q("--query-gpu=index,uuid").map(([i, u]) => [u, Number(i)]));
 	return new Set(q("--query-compute-apps=gpu_uuid,pid").map(([u]) => idx.get(u)).filter((g): g is number => g !== undefined));
+}
+
+/** Free memory (MiB) per GPU index. */
+function gpuFreeMiB(): Map<number, number> {
+	const out = execFileSync("nvidia-smi", ["--query-gpu=index,memory.free", "--format=csv,noheader,nounits"], { encoding: "utf8", timeout: 20000 });
+	return new Map(out.trim().split("\n").filter(Boolean).map((l) => { const [i, f] = l.split(",").map((x) => Number(x.trim())); return [i, f] as [number, number]; }));
 }
 
 /** Refresh job states from exit files / wrapper processes. Returns jobs that newly finished (as observed by this process). */
@@ -186,12 +199,23 @@ export function wrapperScript(base: string, cwd: string, after?: { id: string; b
  * queued predecessor may take over the predecessor's GPU, unless another active job already waits on that predecessor there
  * (otherwise both would start together on one GPU). A finished predecessor hands nothing over.
  */
-export function pickGpus(allowed: number[], jobs: Job[], busy: Set<number>, pred?: Job): { free: number[]; reserved: number[] } {
+export function pickGpus(allowed: number[], jobs: Job[], busy: Set<number>, pred?: Job,
+	opts: { maxTotal?: number; shareForeign?: boolean; freeMiB?: Map<number, number>; minFreeMiB?: number } = {}): { free: number[]; reserved: number[] } {
 	const active = jobs.filter((j) => j.status === "running" || j.status === "queued");
 	const reserved = new Set(active.flatMap((j) => j.gpus));
 	const handover = new Set(pred && (pred.status === "running" || pred.status === "queued") ? pred.gpus : []);
 	for (const j of active) if (pred && j.after === pred.id) for (const g of j.gpus) handover.delete(g);
-	return { free: allowed.filter((g) => handover.has(g) || (!reserved.has(g) && !busy.has(g))), reserved: [...reserved] };
+	// Foreign-only GPUs (a process but no lab job of ours) are usable when sharing is enabled and enough memory is free.
+	const shareOk = (g: number) => !!opts.shareForeign && (opts.freeMiB?.get(g) ?? 0) >= (opts.minFreeMiB ?? 0);
+	let free = allowed.filter((g) => handover.has(g) || (!reserved.has(g) && (!busy.has(g) || shareOk(g))));
+	if (opts.maxTotal !== undefined) {
+		const room = Math.max(0, opts.maxTotal - reserved.size);
+		const fresh = free.filter((g) => !handover.has(g));
+		// prefer GPUs with no foreign process, then more free memory, then lower index last for GPU 0 (shared by other users)
+		fresh.sort((a, b) => Number(busy.has(a)) - Number(busy.has(b)) || (opts.freeMiB?.get(b) ?? 0) - (opts.freeMiB?.get(a) ?? 0) || Number(a === 0) - Number(b === 0));
+		free = [...free.filter((g) => handover.has(g)), ...fresh.slice(0, room)];
+	}
+	return { free, reserved: [...reserved] };
 }
 
 /** Project root = nearest ancestor containing RESEARCH_STATE.md. */
@@ -414,7 +438,9 @@ export default function (pi: ExtensionAPI) {
 				if (!policy) throw new Error("No .pi/lab.json GPU policy found above cwd; GPU jobs refused.");
 				if (n > policy.max_gpus_per_job) throw new Error(`Requested ${n} GPUs > max_gpus_per_job ${policy.max_gpus_per_job}`);
 				const busy = gpuBusy();
-				const { free, reserved } = pickGpus(policy.allowed_gpus, jobs, busy, pred);
+				const share = policy.share_foreign_min_free_mib !== undefined;
+				const { free, reserved } = pickGpus(policy.allowed_gpus, jobs, busy, pred, {
+					maxTotal: policy.max_total_gpus, shareForeign: share, minFreeMiB: policy.share_foreign_min_free_mib, freeMiB: share || policy.max_total_gpus !== undefined ? gpuFreeMiB() : undefined });
 				if (free.length < n) throw new Error(`Not enough free GPUs: need ${n}, free ${free.join(",") || "none"} (reserved by lab jobs: ${reserved.join(",") || "none"}; GPUs with compute processes: ${[...busy].join(",") || "none"}).`);
 				gpus = free.slice(0, n);
 			}

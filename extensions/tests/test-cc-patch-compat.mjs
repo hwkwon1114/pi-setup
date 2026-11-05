@@ -6,21 +6,8 @@ import { tmpdir, homedir } from 'node:os';
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { createRequire } from 'node:module';
-function piModules() {
-  if (process.env.PI_HOST_MODULES) return process.env.PI_HOST_MODULES;
-  const home = process.env.PI_CODING_AGENT_DIR ?? join(homedir(), '.pi', 'agent');
-  const rel = join(home, 'install', 'releases');
-  const versions = existsSync(rel) ? readdirSync(rel).filter(v => existsSync(join(rel, v, 'node_modules', '@earendil-works', 'pi-coding-agent')))
-    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true })) : [];
-  if (versions.length) return join(rel, versions.at(-1), 'node_modules');
-  return execFileSync('npm', ['root', '-g'], { encoding: 'utf8', shell: process.platform === 'win32' }).trim();
-}
-const modules = piModules();
-const { createJiti } = createRequire(join(modules, '@earendil-works/pi-coding-agent/package.json'))('jiti');
-const jiti = createJiti(import.meta.url, { alias: {
-  '@earendil-works/pi-coding-agent': join(modules, '@earendil-works/pi-coding-agent/dist/index.js'),
-  '@earendil-works/pi-ai': join(modules, '@earendil-works/pi-ai/dist/index.js'),
-  'typebox': join(modules, 'typebox/build/index.mjs') } });
+import { hostJiti } from '../../tests/lib/pi-host.mjs';
+const jiti = hostJiti(import.meta.url);
 const m = await jiti.import(new URL('../cc-patch-compat.ts', import.meta.url).pathname);
 
 test('links coding-agent to pi-coding-agent once, next to the package', () => {

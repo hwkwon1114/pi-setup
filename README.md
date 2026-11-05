@@ -184,7 +184,16 @@ local `packages/research-runtime` (context management) and `packages/lab`
 (`job_start`/`job_list`: detached jobs with GPU assignment from the nearest project
 `.pi/lab.json`; a finished job wakes only the session that started it or one bound
 to its card, and killing a job releases the jobs queued behind it).
-`pi update --extensions` refreshes the npm/git packages to their latest releases.
+These packages are pinned (exact npm versions, a pi-cc-patch commit) in
+`config/settings.json`, so `pi update --extensions` does not move them. To upgrade:
+read the package changelog, bump the pin, `./bin/sync-settings.sh`, restart Pi and
+run `./tests/run-tests.sh`. Offline extension tests resolve Pi's host modules and
+extension-loader aliases through `tests/lib/pi-host.mjs`; update that one file when
+Pi changes its loader aliases.
+
+Context management uses billion-context-pi's built-in `lean` prompt pack
+(`config/acp.json` → `compress.promptPack`), which cuts its system-prompt
+instructions from ~4.5K to ~1.4K tokens; remove the key to restore the full pack.
 
 Research work runs through project spec cards: `agents/verifier.md` (Astra,
 read-only spec verifier before expensive runs) and `agents/critic.md` (Gemini

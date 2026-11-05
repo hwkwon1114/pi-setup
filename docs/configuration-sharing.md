@@ -36,7 +36,7 @@ For MCP tools with OS-specific executables, use `local-config/mcp.json`:
 ## Merge, changes and recovery
 
 - JSON Merge Patch semantics: objects merge recursively, scalars/arrays replace, `null` removes keys. Literal JSON null cannot be set through an override. To remove an inherited list use `[]`.
-- Private explicit overrides win even if shared defaults change later. Remove a private override to inherit again. `deviceId` and `lastChangelogVersion` are carried from live settings automatically, never from shared defaults.
+- Private explicit overrides win even if shared defaults change later. Remove a private override to inherit again. `deviceId`, `lastChangelogVersion` and `extensionChangelogVersions` are carried from live settings automatically, never from shared defaults.
 - `.last-applied.json` inside `local-config/` records the last rendered files; it is local state, not a shared template. It may include local secrets. Each JSON output is atomically replaced with owner-only permissions on POSIX; replaced live configurations are backed up under `backups/config-*/`.
 - Unrecorded live edits block all three files before any configuration is written. Run `bin/sync-settings.sh --capture-local` to preserve these edits privately. With a saved baseline, only actual edits are captured, allowing unrelated new shared defaults through. On the first migration there is no baseline: capture preserves the complete existing live meaning, including deletions. Inspect/remove unwanted overrides afterward.
 - `--check` validates inputs and conflict status without writing; it is not a preview of values. Invalid JSON or unavailable Python refuses synchronization. There is no force-overwrite mode.

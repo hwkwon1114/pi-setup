@@ -8,11 +8,11 @@
   },
   "extensions": [],
   "packages": [
-    "npm:pi-subagents@latest",
-    "npm:pi-antigravity@latest",
+    "npm:pi-subagents@0.85.0",
+    "npm:pi-antigravity@0.11.0",
     "./packages/research-runtime",
-    "npm:@juicesharp/rpiv-ask-user-question",
-    "git:github.com/picassio/pi-cc-patch",
+    "npm:@juicesharp/rpiv-ask-user-question@2.15.0",
+    "git:github.com/picassio/pi-cc-patch@fe58871de6317e1ac24bb33617db73b0cff66a5e",
     "./packages/lab"
   ],
   "enabledModels": [
@@ -71,5 +71,6 @@
         "thinking": "max"
       }
     }
-  }
+  },
+  "collapseChangelog": true
 }
