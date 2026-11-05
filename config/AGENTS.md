@@ -9,6 +9,10 @@ Project facts live in project `AGENTS.md`; methods in skills. Keep one authorita
 - Within an approved card, work end-to-end without procedural check-ins: implement → known-answer tests → **verifier** → run → analyse → report. Ask only for changes to the card's question, formulas, metrics/gates, data access or substantial compute, or for genuine blockers.
 - Do not substitute a proxy metric for the card's target; negative and non-identifiable results are valid outcomes. Never tune on final tests or relax a gate to pass.
 
+## Asking the researcher for decisions
+
+- In questions, briefs and `ask_user_question` options, explain in plain words what is going on, what each option does and what it changes or costs. Letters, option codes and internal IDs ("option (b)", O2, D79, F9, KA1, arm names such as MP3/NOM_D) are not explanations; if one is needed for traceability, put it after the plain description.
+
 ## Verification gate
 
 - Before training, sweeps or expensive simulation on new/changed code, run the `verifier` subagent (Astra, read-only) against the card. `BLOCKING ISSUES` must be fixed and re-verified; absent/failed/stale verification is not approval. Quick edits and bounded CPU fixtures need no verifier.
